@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel,
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QPalette, QColor, QPainter, QImage
 from PyQt5.QtCore import Qt, QRectF, QRect, QThread, pyqtSignal
 
+
 margin = 10
 camera_width, camera_height = 900, 600
 label_height = 30
