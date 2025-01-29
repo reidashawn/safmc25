@@ -25,35 +25,40 @@ text_colour = "#F0F1F1"
 background_colour = "#353535"
 window_colour = "#242424"
 
-class GUISubscriber(Node):  # (SHAWN)
-    def __init__(self, update_camera_callback):
-        super().__init__('gui_subscriber')
-
+class CameraSubscriberNode(Node):
+    def __init__(self):
+        super().__init__('camera_subscriber')
         self.bridge = CvBridge()
-
-        # Subscription for Camera
-        self.camera_subscription = self.create_subscription(
-            Image,
-            '/camera1/color/image_raw',  # Topic for Camera 1
-            self.camera_callback,
-            10
+        self.subscription = self.create_subscription(
+            CompressedImage, 
+            "/camera/camera/color/image_raw/compressed",
+            self.camera_sub_callback, 10
         )
-        self.update_camera_callback = update_camera_callback
+        self.signal = pyqtSignal(object)
 
-    def camera_callback(self, msg):
-        cv_image = self.bridge.imgmsg_to_cv2(msg, 'bgr8')  # Convert to OpenCV format
-        self.update_camera_callback(cv_image)  # Send data to GUI
+    def camera_sub_callback(self, msg):
+        try:
+            cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
+        except Exception as e:
+            self.get_logger().error(f"Failed to convert image {e}")
+            return
 
-class ROS2Thread(QThread): # (SHAWN)
-    camera_signal = pyqtSignal(object)  # Signal for Camera 1
+        self.signal.emit(cv_image)
+
+class RosThread(QThread):
+    data_received = pyqtSignal(object)
+
+    def __init__(self):
+        super().__init__()
+        self.node = CameraSubscriberNode()
+        self.node.signal = self.data_received
 
     def run(self):
-        rclpy.init()
-        self.node = GUISubscriber(
-            self.camera_signal.emit
-        )
         rclpy.spin(self.node)
+
+    def stop(self):
         rclpy.shutdown()
+        self.wait()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -208,14 +213,9 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(vbox)
 
 def main():
+    rclpy.init()
     app = QApplication(sys.argv)
     window = MainWindow()
-
-    # (SHAWN)
-    ros2_thread = ROS2Thread()
-    ros2_thread.camera_signal.connect(window.update_camera)
-    ros2_thread.start()
-
     window.show()
     sys.exit(app.exec_())
 
