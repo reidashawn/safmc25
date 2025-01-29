@@ -8,10 +8,9 @@ from PyQt5.QtCore import Qt, QRectF, QRect, QThread, pyqtSignal
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float32  # For PWM sensor data (adjust if necessary)
 from cv_bridge import CvBridge  # For converting ROS2 Image messages to OpenCV format
 import cv2  # For OpenCV image processing
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import CompressedImage, Image
 
 
 
@@ -26,9 +25,9 @@ text_colour = "#F0F1F1"
 background_colour = "#353535"
 window_colour = "#242424"
 
-class CameraSubscriberNode(Node):
+class RGBSubscriberNode(Node):
     def __init__(self):
-        super().__init__('camera_subscriber')
+        super().__init__('rgb_camera_subscriber')
         self.bridge = CvBridge()
         self.subscription = self.create_subscription(
             CompressedImage, 
@@ -46,12 +45,34 @@ class CameraSubscriberNode(Node):
 
         self.signal.emit(cv_image)
 
+class InfraSubsciberNode(Node):
+    def __init__(self, node_name: str, topic_name: str):
+        super().__init__(node_name)
+        self.bridge = CvBridge()
+        self.subscription = self.create_subscription(
+            Image, 
+            topic_name,
+            self.camera_sub_callback, 10
+        )
+        self.signal = pyqtSignal(object)
+
+    def camera_sub_callback(self, msg):
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding="mono8")
+        except Exception as e:
+            self.get_logger().error(f"Failed to convert image {e}")
+            return
+
+        self.signal.emit(cv_image)
+
+
 class RosThread(QThread):
     data_received = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
-        self.node = CameraSubscriberNode()
+        # self.node = RGBSubscriberNode()
+        self.node = InfraSubsciberNode('rgb_subscriber_node', "/camera/camera/infra1/image_rect_raw")
         self.node.signal = self.data_received
 
     def run(self):
@@ -71,7 +92,7 @@ class MainWindow(QMainWindow):
 
         # Forward cam (SHAWN)
         self.label_fwd_cam, self.pic_fwd_cam = self.createCam("    Forward Cam")
-        self.ros_thread.data_received.connect(self.updateCam)
+        self.ros_thread.data_received.connect(self.updateInfraCam)
         self.ros_thread.start()
 
         # Downward cam
@@ -165,6 +186,13 @@ class MainWindow(QMainWindow):
         q_image = QImage(cv_image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
         pixmap_cam = QPixmap.fromImage(q_image)
         self.pic_fwd_cam.setPixmap(pixmap_cam)
+    
+    def updateInfraCam(self, cv_image):  # (SHAWN)
+        height, width = cv_image.shape
+        bytes_per_line = 3 * width
+        q_image = QImage(cv_image.data, width, height, bytes_per_line, QImage.Format_Grayscale8)
+        pixmap_cam = QPixmap.fromImage(q_image)
+        self.pic_fwd_cam.setPixmap(pixmap_cam)
 
     def updateCam_fake(self, pic_cam):
         pixmap_cam = QPixmap("dwd_cam_fake.jpg")        
@@ -215,7 +243,7 @@ class MainWindow(QMainWindow):
         vbox.addLayout(grid2)
 
         central_widget.setLayout(vbox)
-        
+
     def closeEvent(self, event):
         self.ros_thread.stop()
         event.accept()
