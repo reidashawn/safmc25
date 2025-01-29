@@ -13,6 +13,11 @@ from cv_bridge import CvBridge  # For converting ROS2 Image messages to OpenCV f
 import cv2  # For OpenCV image processing
 from sensor_msgs.msg import CompressedImage
 
+from mavros_msgs.msg import State
+from sensor_msgs.msg import Imu
+from mavros_msgs.msg import BatteryState
+from std_msgs.msg import Float64
+import tf_transformations
 
 
 # Dimensions
@@ -46,16 +51,66 @@ class CameraSubscriberNode(Node):
 
         self.signal.emit(cv_image)
 
+class MavrosSubscriberNode(Node):
+    def __init__(self):
+        super().__init__('mavros_subscriber')
+        self.create_subscription(State, '/mavros/state', self.state_callback, 10)
+        self.create_subscription(BatteryState, '/mavros/battery', self.battery_callback, 10)
+        self.create_subscription(Imu, '/mavros/imu/data', self.imu_callback, 10)
+        self.create_subscription(Float64, '/mavros/global_position/rel_alt', self.altitude_callback, 10)
+        
+        self.data = {
+            "armed": "Unknown",
+            "mode": "Unknown",
+            "battery": "Unknown",
+            "roll": "Unknown",
+            "pitch": "Unknown",
+            "yaw": "Unknown",
+            "altitude": "Unknown"
+        }
+        self.signal = pyqtSignal(dict)
+    
+    def state_callback(self, msg):
+        self.data["armed"] = "Armed" if msg.armed else "Disarmed"
+        self.data["mode"] = msg.mode
+        self.signal.emit(self.data)
+
+    def battery_callback(self, msg):
+        self.data["battery"] = f"{msg.percentage * 100:.1f}%"
+        self.signal.emit(self.data)
+
+    def imu_callback(self, msg):
+        quaternion = [
+            msg.orientation.x,
+            msg.orientation.y,
+            msg.orientation.z,
+            msg.orientation.w
+        ]
+        roll, pitch, yaw = tf_transformations.euler_from_quaternion(quaternion)
+        self.data["roll"] = f"{roll:.2f}"
+        self.data["pitch"] = f"{pitch:.2f}"
+        self.data["yaw"] = f"{yaw:.2f}"
+        self.signal.emit(self.data)
+
+    def altitude_callback(self, msg):
+        self.data["altitude"] = f"{msg.data:.2f} m"
+        self.signal.emit(self.data)
+
 class RosThread(QThread):
-    data_received = pyqtSignal(object)
+    fwd_cam_received = pyqtSignal(object)
+    telem_received = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
-        self.node = CameraSubscriberNode()
-        self.node.signal = self.data_received
+        self.cam_node = CameraSubscriberNode()
+        self.cam_node.signal = self.fwd_cam_received
+
+        self.telem_node = MavrosSubscriberNode()
+        self.telem_node.signal = self.telem_received
 
     def run(self):
-        rclpy.spin(self.node)
+        rclpy.spin(self.cam_node)
+        rclpy.spin(self.telem_node)
 
     def stop(self):
         rclpy.shutdown()
@@ -71,8 +126,7 @@ class MainWindow(QMainWindow):
 
         # Forward cam (SHAWN)
         self.label_fwd_cam, self.pic_fwd_cam = self.createCam("    Forward Cam")
-        self.ros_thread.data_received.connect(self.updateCam)
-        self.ros_thread.start()
+        self.ros_thread.fwd_cam_received.connect(self.updateCam)
 
         # Downward cam
         self.label_dwd_cam, self.pic_dwd_cam = self.createCam("    Downward Cam")
@@ -80,6 +134,7 @@ class MainWindow(QMainWindow):
 
         # UAV Info
         self.label_UAV, self.info_UAV = self.createUAVInfo()
+        self.ros_thread.telem_received.connect(self.updateUAVInfo)
 
         # Payload
         self.label_payload = QLabel("    Payload", self)
@@ -120,6 +175,7 @@ class MainWindow(QMainWindow):
 
         # General
         self.setStyleSheet("background-color: #353535;")
+        self.ros_thread.start()
         self.initUI()
     
     def createCam(self, label):
@@ -149,15 +205,29 @@ class MainWindow(QMainWindow):
                                      "background-color: #242424;")
         label_UAV.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
 
-        info_UAV = QLabel("    Armed : ARMED\n    Battery : 96%\n    Flight Mode : GUIDED\n\n    Pitch : 0.6\n    Roll : -0.3\n    Yaw : 359\n    Altitude : 1.6m\n", self)
-        info_UAV.setGeometry(margin, 2 * margin + 2 * label_height + camera_height, info_width, info_height)
-        info_UAV.setFont(QFont("Arial", 10))
-        info_UAV.setFixedSize(info_width, info_height)
-        info_UAV.setStyleSheet("color: #F0F1F1;"
-                               "background-color: #242424;")
-        info_UAV.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        # info_UAV = QLabel("    Armed : ARMED\n    Battery : 96%\n    Flight Mode : GUIDED\n\n    Pitch : 0.6\n    Roll : -0.3\n    Yaw : 359\n    Altitude : 1.6m\n", self)
+        # info_UAV.setGeometry(margin, 2 * margin + 2 * label_height + camera_height, info_width, info_height)
+        # info_UAV.setFont(QFont("Arial", 10))
+        # info_UAV.setFixedSize(info_width, info_height)
+        # info_UAV.setStyleSheet("color: #F0F1F1;"
+        #                        "background-color: #242424;")
+        # info_UAV.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
-        return label_UAV, info_UAV
+
+        self.info_UAV = QVBoxLayout()
+        self.labels = {
+            "armed": QLabel("Armed: Unknown"),
+            "mode": QLabel("Mode: Unknown"),
+            "battery": QLabel("Battery: Unknown"),
+            "roll": QLabel("Roll: Unknown"),
+            "pitch": QLabel("Pitch: Unknown"),
+            "yaw": QLabel("Yaw: Unknown"),
+            "altitude": QLabel("Altitude: Unknown")
+        }
+        for label in self.labels.values():
+            self.info_UAV.addWidget(label)
+        
+        return label_UAV, self.info_UAV
 
     def updateCam(self, cv_image):  # (SHAWN)
         height, width, channel = cv_image.shape
@@ -169,6 +239,10 @@ class MainWindow(QMainWindow):
     def updateCam_fake(self, pic_cam):
         pixmap_cam = QPixmap("dwd_cam_fake.jpg")        
         pic_cam.setPixmap(pixmap_cam.scaled(pic_cam.size(), aspectRatioMode=1))
+
+    def updateUAVInfo(self, data):
+        for key, value in data.items():
+            self.labels[key].setText(f"{key.capitalize()}: {value}")
 
     def initUI(self):
         central_widget = QWidget()
@@ -182,7 +256,6 @@ class MainWindow(QMainWindow):
 
         vbox = QVBoxLayout()
 
-        
         spacer = QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
         # create label objects here
@@ -197,7 +270,7 @@ class MainWindow(QMainWindow):
         # grid.addWidget(self.label_spacer, 2, 0)  # Span across columns 0-2
 
         grid2.addWidget(self.label_UAV, 0, 0)
-        grid2.addWidget(self.info_UAV, 1, 0)
+        grid2.addLayout(self.info_UAV, 1, 0)
 
         grid1.addItem(spacer, 0, 1)
         grid1.addItem(spacer, 1, 1)
