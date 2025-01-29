@@ -8,10 +8,11 @@ from PyQt5.QtCore import Qt, QRectF, QRect, QThread, pyqtSignal
 
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image  # For camera image messages
 from std_msgs.msg import Float32  # For PWM sensor data (adjust if necessary)
 from cv_bridge import CvBridge  # For converting ROS2 Image messages to OpenCV format
 import cv2  # For OpenCV image processing
+from sensor_msgs.msg import CompressedImage
+
 
 
 # Dimensions
@@ -66,9 +67,12 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("SAFMC GUI")
 
+        self.ros_thread = RosThread()
+
         # Forward cam (SHAWN)
         self.label_fwd_cam, self.pic_fwd_cam = self.createCam("    Forward Cam")
-        self.updateCam(self.pic_fwd_cam)
+        self.ros_thread.data_received.connect(self.updateCam)
+        self.ros_thread.start()
 
         # Downward cam
         self.label_dwd_cam, self.pic_dwd_cam = self.createCam("    Downward Cam")
