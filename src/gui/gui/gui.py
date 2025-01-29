@@ -159,12 +159,12 @@ class MainWindow(QMainWindow):
 
         return label_UAV, info_UAV
 
-    def updateCam(self, pic_cam, cv_image):  # (SHAWN)
+    def updateCam(self, cv_image):  # (SHAWN)
         height, width, channel = cv_image.shape
         bytes_per_line = 3 * width
         q_image = QImage(cv_image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
         pixmap_cam = QPixmap.fromImage(q_image)
-        pic_cam.setPixmap(pixmap_cam)
+        self.pic_fwd_cam.setPixmap(pixmap_cam)
 
     def updateCam_fake(self, pic_cam):
         pixmap_cam = QPixmap("dwd_cam_fake.jpg")        
