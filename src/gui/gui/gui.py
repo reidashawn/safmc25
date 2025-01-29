@@ -161,7 +161,7 @@ class MainWindow(QMainWindow):
 
     def updateCam(self, cv_image):  # (SHAWN)
         height, width, channel = cv_image.shape
-        bytes_per_line = 3 * width
+        bytes_per_line = channel * width
         q_image = QImage(cv_image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
         pixmap_cam = QPixmap.fromImage(q_image)
         self.pic_fwd_cam.setPixmap(pixmap_cam)
@@ -215,6 +215,10 @@ class MainWindow(QMainWindow):
         vbox.addLayout(grid2)
 
         central_widget.setLayout(vbox)
+        
+    def closeEvent(self, event):
+        self.ros_thread.stop()
+        event.accept()
 
 def main():
     rclpy.init()
