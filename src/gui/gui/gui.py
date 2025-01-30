@@ -46,6 +46,10 @@ class CameraSubscriberNode(Node):
 
         self.signal.emit(cv_image)
 
+class BatterySubscriberNode(Node):
+    def __init__(self):
+        super().__init__('battery_subsciber')
+
 class RosThread(QThread):
     data_received = pyqtSignal(object)
 
