@@ -14,8 +14,7 @@ import cv2  # For OpenCV image processing
 from sensor_msgs.msg import CompressedImage
 
 from mavros_msgs.msg import State
-from sensor_msgs.msg import Imu
-from mavros_msgs.msg import BatteryState
+from sensor_msgs.msg import Imu, BatteryState
 from std_msgs.msg import Float64
 import tf_transformations
 
@@ -175,6 +174,8 @@ class MainWindow(QMainWindow):
 
         # General
         self.setStyleSheet("background-color: #353535;")
+
+        # start background ROS thread
         self.ros_thread.start()
         self.initUI()
     
