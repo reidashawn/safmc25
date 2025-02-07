@@ -1,0 +1,8 @@
+mavros_node:
+  ros_parameters:
+    fcu_url: dev/tty/ACM0
+    gcs_url: tcp-l://:5670
+    tgt_system: 1
+    tgt_component: 1
+    system_id: 255
+    component_id: 240
