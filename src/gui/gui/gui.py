@@ -190,6 +190,7 @@ class MainWindow(QMainWindow):
         pic_cam = QLabel(self)
         pic_cam.setGeometry(margin, margin + label_height, camera_width, camera_height)
         
+        # TODO: fix this
         pic_cam.setFixedSize(camera_width, camera_height)
         pic_cam.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         pic_cam.setStyleSheet("""
