@@ -21,6 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'toggle_io = magnetron.toggle_io:main',
+            'servo_node = magnetron.servo_node:main',
+            'hook_control_node = magnetron.hook_control_node:main'
         ],
     },
 )
