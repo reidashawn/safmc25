@@ -1,8 +1,13 @@
+import termios
 import rclpy
 from rclpy.node import Node
-from mavros_msgs.srv import CommandBool, SetMode, CommandTOLLocal, 
+from rclpy.executors import MultiThreadedExecutor
+from mavros_msgs.srv import CommandBool, SetMode, CommandTOLLocal
 from mavros_msgs.msg import State
 from geometry_msgs.msg import Twist
+import threading
+import sys
+import tty
 
 class MavControl(Node):
     '''
@@ -18,16 +23,19 @@ class MavControl(Node):
         # publishers
 
         # clients for various services
-        self.clients = {
-            'mode': self.create_client(SetMode, 'mavros/set_mode'),
-            'arm': self.create_client(CommandBool, '/mavros/cmd/arming'),
-            'takeoff': self.create_client(CommandTOLLocal, '/mavros/cmd/takeoff_local'),
-            # 'land': self.create_client(SetMode, '/mavros/set_mode')
-        }
+        # self.clients = {
+        #     'mode': self.create_client(SetMode, 'mavros/set_mode'),
+        #     'arm': self.create_client(CommandBool, '/mavros/cmd/arming'),
+        #     'takeoff': self.create_client(CommandTOLLocal, '/mavros/cmd/takeoff_local'),
+        #     # 'land': self.create_client(SetMode, '/mavros/set_mode')
+        # }
+        self.mode_client = self.create_client(SetMode, 'mavros/set_mode')
+        while not self.mode_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().warn(f'waiting for mode service')
 
-        for service_name, client in self.clients.items():
-            while not client.wait_for_service(timeout_sec=1.0):
-                self.get_logger().warn(f'Waiting for {service_name} service')
+        # for service_name, client in self.clients.items():
+        #     while not client.wait_for_service(timeout_sec=1.0):
+        #         self.get_logger().warn(f'Waiting for {service_name} service')
 
         self.get_logger().info('Keyboard control is online')
         
@@ -35,9 +43,67 @@ class MavControl(Node):
     def state_callback(self, data):
         self.state = data
 
-    def send_command(self, service_name, command):
-        pass
-    
+    def get_key(self):
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            key = sys.stdin.read(1)
 
-        
+        finally: 
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return key
+
+
+    def send_command(self, service_name, command):
+        if service_name not in self.clients:
+            self.get_logger().error(f'{service_name} cannot be found')
+            return
+    
+    def takeoff_command(self, ):
+        pass
+
+    def change_mode(self, mode: str):
+        mode_req = SetMode.Request()
+        mode_req.custom_mode = mode
+        return self.mode_client.call_async(mode_req)
+
+    
+    def keyboard_loop(self):
+        while rclpy.ok():
+            key = self.get_key()
+            self.get_logger().info(key)
+
+            if key == "q":
+                break
+            elif key == "g":
+                self.change_mode("GUIDED")
+            elif key == "l":
+                self.change_mode("LAND")
+            # elif key == "t":
+            #     pass
+
+
+    
+def main():
+    rclpy.init()
+    node = MavControl()
+    
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+
+    thread = threading.Thread(target=executor.spin, daemon=True)
+    print('starting thread')
+    thread.start()
+
+    print('running keyboard loop')
+
+    node.keyboard_loop()
+
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
 
