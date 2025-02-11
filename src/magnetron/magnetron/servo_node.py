@@ -11,13 +11,14 @@ class Pin:
     """
     max_interval = 0.5  # Maximum interval before resetting to default angle
 
-    def __init__(self, pin, freq, default_angle, angle=None, angle_range=180, min_duty=1, max_duty=99):
+    def __init__(self, pin, freq, default_angle, angle=None, angle_range=210, min_duty=1.3uu, max_duty=12.45):
         self.pin = pin
         GPIO.setmode(GPIO.BCM)  # Set GPIO mode to BCM
         GPIO.setup(pin, GPIO.OUT)  # Set pin as an output
         
         self.freq = freq
         self.pwm = GPIO.PWM(pin, freq)  # Initialize PWM
+        self.pwm.start(0)
         self.angle_range = angle_range
         self.min_duty = min_duty
         self.max_duty = max_duty
@@ -37,11 +38,13 @@ class Pin:
             while True:
                 if (time.time() - self.last_time) > self.max_interval and self.angle != self.default_angle:
                     self.angle = self.default_angle  # Reset angle if no update occurs
-                
+                    print("interval too long")
+                print(f"angle: {self.angle}, duty: {self.angle_to_duty()}")
                 self.set_pwm(self.angle_to_duty())
-                time.sleep(0.2)  # Keep PWM active for 0.4s
+                time.sleep(.2)  # Keep PWM active for 0.4s
                 self.set_pwm(0)  # Turn off PWM
-                time.sleep(.8)  # Wait before next cycle
+                time.sleep(.2)  # Wait before next cycle
+
         finally:
             self.set_pwm(self.angle_to_duty(self.default_angle))  # Reset to default angle on exit
             self.pwm.stop()
@@ -86,7 +89,7 @@ class PinController(Node):
         """
         pin = request.pin
         angle = request.angle
-        self.get_logger().info(f"Received request to set pin {pin} to angle {angle}")
+        # self.get_logger().info(f"Received request to set pin {pin} to angle {angle}")
         
         if pin in self.pins:
             self.pins[pin].set_angle(angle)  # Update existing pin instance
