@@ -16,13 +16,14 @@ class PinClient(Node):
         self.pin_angles = {17: 0, 18: 0}  # Track angles for both pins
         self.lock = threading.Lock()
         self.running = True
+        self.interval = 45
 
         # Start a thread for reading key inputs
         self.input_thread = threading.Thread(target=self.key_listener, daemon=True)
         self.input_thread.start()
 
         # Create a timer that sends requests every 0.9 seconds
-        self.timer = self.create_timer(0.9, self.send_periodic_request)
+        self.timer = self.create_timer(0.1, self.send_periodic_request)
     
     def key_listener(self):
         """Reads keyboard input and updates pin angles accordingly."""
@@ -33,13 +34,13 @@ class PinClient(Node):
             while self.running:
                 key = sys.stdin.read(1)
                 if key == 'u':
-                    self.update_angle(17, 5)
+                    self.update_angle(17, self.interval)
                 elif key == 'j':
-                    self.update_angle(17, -5)
+                    self.update_angle(17, -self.interval)
                 elif key == 'i':
-                    self.update_angle(18, 5)
+                    self.update_angle(18, self.interval)
                 elif key == 'k':
-                    self.update_angle(18, -5)
+                    self.update_angle(18, -self.interval)
                 elif key == 'q':
                     self.running = False
                     break
@@ -49,7 +50,7 @@ class PinClient(Node):
     def update_angle(self, pin, delta):
         """Updates the angle of the specified pin and sends a request."""
         with self.lock:
-            self.pin_angles[pin] = max(0, min(180, self.pin_angles[pin] + delta))
+            self.pin_angles[pin] = max(0, min(210, self.pin_angles[pin] + delta))
             self.send_request(pin, self.pin_angles[pin])
     
     def send_request(self, pin, angle):
@@ -69,10 +70,10 @@ class PinClient(Node):
     def response_callback(self, future):
         try:
             response = future.result()
-            if response.success:
-                self.get_logger().info('Successfully toggled pin')
-            else:
-                self.get_logger().warn('Failed to toggle pin')
+            # if response.success:
+                # self.get_logger().info('Successfully toggled pin')
+            # else:
+                # self.get_logger().warn('Failed to toggle pin')
         except Exception as e:
             self.get_logger().error(f'Service call failed: {str(e)}')
 
