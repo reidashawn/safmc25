@@ -1,8 +1,10 @@
 import termios
+
+from cv2 import broadcast
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
-from mavros_msgs.srv import CommandBool, SetMode, CommandTOLLocal
+from mavros_msgs.srv import CommandBool, SetMode, CommandTOLLocal, CommandLong
 from mavros_msgs.msg import State
 from geometry_msgs.msg import Twist, Vector3
 import threading
@@ -42,7 +44,7 @@ class MavControl(Node):
         while not self.arm_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn(f'waiting for arm service')
 
-        self.takeoff_client = self.create_client(CommandTOLLocal, '/mavros/cmd/takeoff_local')
+        self.takeoff_client = self.create_client(CommandLong, '/mavros/cmd/command')
         while not self.takeoff_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn(f'waiting for takeoff service')
 
@@ -87,9 +89,9 @@ class MavControl(Node):
         '''
         hover to a height of 0.3m above the ground at 0.5m/s
         '''
-        hover_pos = Vector3(x=0.0, y=0.0, z=0.3)
+        
 
-        takeoff_req = CommandTOLLocal.Request(min_pitch=0.0, offset=0.0, rate=0.5, yaw=0.0, position=hover_pos)
+        takeoff_req = CommandLong.Request(broadcast=False, command=22, confirmation=0, param1=0.0, param2=0.0, param3=0.0, param4=0.0, param5=0.0, param6=0.0, param7=1.0)
 
         future = self.takeoff_client.call_async(takeoff_req)
         self.get_logger().info(f"Takeoff command result: {future.result()}")
