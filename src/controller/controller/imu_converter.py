@@ -216,6 +216,8 @@ class ImuConverter(Node):
         response.success = True
         self.get_logger().info(f"IMU recentered to pitch {pitch}, roll {roll}")
         return response
+        self.get_logger().info(f"Published velocity: linear.x={velocity_msg.linear.x}, linear.y={velocity_msg.linear.y}")
+        self.get_logger().info(f"Published Euler angles: pitch={pitch}, roll={roll}, yaw={yaw}")
 
 def main(args=None):
     rclpy.init(args=args)

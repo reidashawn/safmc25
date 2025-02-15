@@ -93,11 +93,6 @@ class ControllerPubNode(Node):
                 self.but3_publisher.publish(Int32(data=but3_value))
                 self.but4_publisher.publish(Int32(data=but4_value))
 
-                self.but1_publisher.publish(Int32(data=but1_value))
-                self.but2_publisher.publish(Int32(data=but2_value))
-                self.but3_publisher.publish(Int32(data=but3_value))
-                self.but4_publisher.publish(Int32(data=but4_value))
-
 
         except Exception as e:
             self.get_logger().error(f"Error in update: {e}")
