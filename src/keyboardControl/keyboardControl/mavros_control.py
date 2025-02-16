@@ -10,6 +10,7 @@ from geometry_msgs.msg import Twist, Vector3
 import threading
 import sys
 import tty
+from pynput import keyboard
 
 class MavControl(Node):
     '''
@@ -50,22 +51,14 @@ class MavControl(Node):
 
         self.cmd_vel_publisher = self.create_publisher(Twist, "/mavros/setpoint_velocity/cmd_vel_unstamped", 10)
 
+        self.listener_thread = threading.Thread(target=self.start_keyboard_listener, daemon=True)
+        self.listener_thread.start()
+
         self.get_logger().info('Keyboard control is online')
         
     
     def state_callback(self, data):
         self.state = data
-
-    def get_key(self):
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(fd)
-            key = sys.stdin.read(1)
-
-        finally: 
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return key
 
 
     def send_command(self, service_name, command):
@@ -100,29 +93,32 @@ class MavControl(Node):
     def horizontal_movement(self, key: str):
         if key == "w":
             self.cmd_vel_publisher.publish(Twist(linear=Vector3(x=0.1, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)))
+        
+    def on_press(self, key):
+        try:
+            key_char = key.char  # Detect character keys
+        except AttributeError:
+            key_char = None  # Handle special keys
 
-    
+        if key_char in ["w", "a", "s", "d"]:
+            self.horizontal_movement(key_char)
+        elif key_char == "g":
+            self.change_mode("GUIDED")
+        elif key_char == "l":
+            self.change_mode("LAND")
+        elif key_char == "h":
+            self.change_mode("STABILIZE")
+        elif key_char == "m":
+            self.arm_drone()
+        elif key_char == "t":
+            self.takeoff()
+        elif key == keyboard.Key.esc:  # Stop listener on ESC
+            self.get_logger().info("Shutting down keyboard listener...")
+            return False
 
-    def keyboard_loop(self):
-        while rclpy.ok():
-            key = self.get_key()
-            self.get_logger().info(f"{key} pressed")
-
-            if key == "q":
-                break
-            elif key == "g":
-                self.change_mode("GUIDED")
-            elif key == "l":
-                self.change_mode("LAND")
-            elif key == "h":
-                self.change_mode("STABILIZE")
-            elif key == "m":
-                self.arm_drone()
-            elif key == "t":
-                self.takeoff()
-            elif key == "w" or key == "a" or key == "s" or key == "d":
-                self.horizontal_movement(key=key)
-
+    def start_keyboard_listener(self):
+        with keyboard.Listener(on_press=self.on_press) as listener:
+            listener.join()
 
 
     
@@ -139,7 +135,10 @@ def main():
 
     print('running keyboard loop')
 
-    node.keyboard_loop()
+    try:
+        thread.join()
+    except KeyboardInterrupt:
+        pass
 
     node.destroy_node()
     rclpy.shutdown()
