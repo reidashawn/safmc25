@@ -4,7 +4,7 @@ from cv2 import broadcast
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
-from mavros_msgs.srv import CommandBool, SetMode, CommandTOLLocal, CommandLong
+from mavros_msgs.srv import CommandBool, SetMode, CommandLong
 from mavros_msgs.msg import State
 from geometry_msgs.msg import Twist, Vector3
 import threading
@@ -48,7 +48,7 @@ class MavControl(Node):
         while not self.takeoff_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn(f'waiting for takeoff service')
 
-       
+        self.cmd_vel_publisher = self.create_publisher(Twist, "/mavros/setpoint_velocity/cmd_vel_unstamped", 10)
 
         self.get_logger().info('Keyboard control is online')
         
@@ -87,7 +87,7 @@ class MavControl(Node):
     
     def takeoff(self):
         '''
-        hover to a height of 0.3m above the ground at 0.5m/s
+        hover to a height of 1.0m above the ground at 0.5m/s
         '''
         
 
@@ -95,6 +95,11 @@ class MavControl(Node):
 
         future = self.takeoff_client.call_async(takeoff_req)
         self.get_logger().info(f"Takeoff command result: {future.result()}")
+
+
+    def horizontal_movement(self, key: str):
+        if key == "w":
+            self.cmd_vel_publisher.publish(Twist(linear=Vector3(x=0.1, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)))
 
     
 
@@ -109,12 +114,15 @@ class MavControl(Node):
                 self.change_mode("GUIDED")
             elif key == "l":
                 self.change_mode("LAND")
-            elif key == "s":
+            elif key == "h":
                 self.change_mode("STABILIZE")
             elif key == "m":
                 self.arm_drone()
             elif key == "t":
                 self.takeoff()
+            elif key == "w" or key == "a" or key == "s" or key == "d":
+                self.horizontal_movement(key=key)
+
 
 
     
