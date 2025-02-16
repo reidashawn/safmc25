@@ -1,6 +1,4 @@
-import termios
 
-from cv2 import broadcast
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
