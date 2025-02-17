@@ -110,7 +110,11 @@ class MavControl(Node):
             self.cmd_vel_publisher.publish(directions[key])
             self.get_logger().info(f"{key} Horizontal command issued")
 
-       
+    def vertical_movement(self, key):
+        if key == keyboard.Key.down: 
+            Twist(linear=Vector3(x=0.0, y=0.0, z=-HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0))
+        else:
+            Twist(linear=Vector3(x=0.0, y=0.0, z=HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0))
         
 
     def on_press(self, key):
@@ -131,6 +135,8 @@ class MavControl(Node):
             self.arm_drone()
         elif key_char == "t":
             self.takeoff()
+        elif key == keyboard.Key.down or key == keyboard.Key.up:
+            self.vertical_movement(key)
         elif key == keyboard.Key.esc:  # Stop listener on ESC
             self.get_logger().info("Shutting down keyboard listener...")
             return False
