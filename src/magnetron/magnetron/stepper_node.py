@@ -135,7 +135,7 @@ class StepperController(Node):
         """
         Handles service requests to toggle a stepper.
         """
-        stepper = request.stepperID
+        stepper = request.stepper_id
         rotations = request.speed
         # self.get_logger().info(f"Received request to set pin {pin} to angle {angle}")
         
