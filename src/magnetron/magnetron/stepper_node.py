@@ -6,26 +6,6 @@ import time
 import threading
 
 
-IN1, IN2, IN3, IN4 = 17, 18, 27, 22  # GPIO Pins
-SEQUENCE = [[1, 0, 0, 1], [1, 0, 0, 0], [1, 1, 0, 0], [0, 1, 0, 0],
-            [0, 1, 1, 0], [0, 0, 1, 0], [0, 0, 1, 1], [0, 0, 0, 1]]
-
-GPIO.setmode(GPIO.BCM)
-for pin in (IN1, IN2, IN3, IN4):
-    GPIO.setup(pin, GPIO.OUT)
-    GPIO.output(pin, 0)
-
-def stepper_step(steps, delay=0.01):
-    for _ in range(steps):
-        for pattern in SEQUENCE:
-            for pin, val in zip((IN1, IN2, IN3, IN4), pattern):
-                GPIO.output(pin, val)
-            time.sleep(delay)
-
-stepper_step(512)  # Rotate 1 full revolution (depends on stepper)
-
-GPIO.cleanup()
-
 
 class Stepper:
     """
