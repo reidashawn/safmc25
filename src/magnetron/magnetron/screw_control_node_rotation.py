@@ -62,7 +62,7 @@ class StepperClient(Node):
     
     def send_request(self, stepper, rotation):
         request = ToggleStepper.Request()
-        request.stepperID = stepper
+        request.stepper_id = stepper
         request.speed = rotation
         
         future = self.client.call_async(request)
