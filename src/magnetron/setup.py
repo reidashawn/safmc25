@@ -25,7 +25,7 @@ setup(
             'hook_control_node = magnetron.hook_control_node:main',
             'stepper_node = magnetron.stepper_node:main',
             'screw_control_node = magnetron.screw_control_node:main',
-            'screw_control_rotation_node = magnetron.screw_control_rotation_node:main'
+            'screw_control_rotation_node = magnetron.screw_control_node_rotation:main'
         ],
     },
 )
