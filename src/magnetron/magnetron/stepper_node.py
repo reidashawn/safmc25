@@ -15,7 +15,7 @@ for pin in (IN1, IN2, IN3, IN4):
     GPIO.setup(pin, GPIO.OUT)
     GPIO.output(pin, 0)
 
-def stepper_step(steps, delay=0.002):
+def stepper_step(steps, delay=0.01):
     for _ in range(steps):
         for pattern in SEQUENCE:
             for pin, val in zip((IN1, IN2, IN3, IN4), pattern):
@@ -57,7 +57,8 @@ class Stepper:
         self.delay = delay
         self.last_time = time.time()
         self.index = 0
-
+        self.rotation_count = 0
+        self.step_per_rot = 64
         self.running = True  # Control flag for the thread
         self.thread = threading.Thread(target=self.toggle_stepper, daemon=True)
         self.thread.start()
@@ -81,7 +82,13 @@ class Stepper:
                         direction = 1 if self.speed > 0 else -1
                         self.index = (self.index + direction) % len(self.sequence)
                         self.set_stepper(self.sequence[self.index])
-                        time.sleep(self.delay / abs(self.speed))
+                        time.sleep(self.delay)
+                    elif self.rotation_count != 0:
+                        direction = -1 if self.rotation_count > 0 else 1
+                        self.index = (self.index + direction) % len(self.sequence)
+                        self.set_stepper(self.sequence[self.index])
+                        self.rotation_count += direction
+                        
                     else:
                         self.set_stepper([0, 0, 0, 0])  # De-energize coils when stopped
                         time.sleep(0.1)  # Sleep briefly to prevent high CPU usage
@@ -102,6 +109,9 @@ class Stepper:
         self.last_time = time.time()
         self.speed = speed
     
+    def set_rotation(self, rotation):
+        self.rotation_count -= (self.step_per_rot * rotation)
+    
     def stop(self):
         """
         Stops the stepper motor and cleans up GPIO resources.
@@ -118,9 +128,10 @@ class StepperController(Node):
     """
     def __init__(self):
         super().__init__('stepper_controller')
-        self.srv = self.create_service(ToggleStepper, 'toggle_stepper', self.handle_toggle_stepper)
+        self.speed_srv = self.create_service(ToggleStepper, 'toggle_stepper', self.handle_toggle_stepper)
+        self.rotation_srv = self.create_service(ToggleStepper, 'rotate_stepper', self.handle_rotate_stepper)
         self.stepper_pins = {1: [4, 7, 17, 22], 2: [23, 24, 25, 26]}
-        self.delay = .3
+        self.delay = .01
         self.steppers ={stepper: Stepper(self.stepper_pins[stepper], self.delay) for stepper in self.stepper_pins}
         self.get_logger().info("StepperController node is ready.")
 
@@ -139,20 +150,42 @@ class StepperController(Node):
         
         response.success = True
         return response
+    
+    def handle_rotate_stepper(self, request, response):
+        """
+        Handles service requests to toggle a stepper.
+        """
+        stepper = request.stepperID
+        rotations = request.speed
+        # self.get_logger().info(f"Received request to set pin {pin} to angle {angle}")
+        
+        if stepper in self.steppers:
+            self.steppers[stepper].set_rotation(rotations)  # Update existing pin instance
+        else:
+            self.steppers[stepper] = Stepper(pin, self.delay)  # Create new pin instance
+            self.steppers[stepper].set_rotation(rotations)
+        
+        response.success = True
+        return response
+
+    def stop(self):
+        for stepper in self.steppers:
+            stepper.stop()
 
 def main(args=None):
     """
     Initializes the ROS2 node and starts the service.
     """
     rclpy.init(args=args)
-    pin_controller = StepperController()
+    stepper_controller = StepperController()
     
     try:
-        rclpy.spin(pin_controller)  # Keep node running
+        rclpy.spin(stepper_controller)  # Keep node running
     except KeyboardInterrupt:
-        pin_controller.get_logger().info("Shutting down StepperController node.")
+        stepper_controller.get_logger().info("Shutting down StepperController node.")
     finally:
-        pin_controller.destroy_node()
+        stepper_controller.stop()
+        stepper_controller.destroy_node()
         rclpy.shutdown()
 
 if __name__ == '__main__':
