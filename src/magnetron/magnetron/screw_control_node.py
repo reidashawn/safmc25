@@ -14,7 +14,7 @@ class StepperClient(Node):
         while not self.client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('Service not available, waiting...')
         
-        self.stepper_speed = {1: 0, 12: 0}  # Track angles for both pins
+        self.stepper_speed = {1: 0, 2: 0}  # Track angles for both pins
         self.lock = threading.Lock()
         self.running = True
         self.interval = 1
