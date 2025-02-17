@@ -16,6 +16,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetFloat.srv"
   "srv/ToggleStepper.srv"
   "srv/SetFloat.srv"
+  "srv/ToggleStepper.srv"
 )
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
