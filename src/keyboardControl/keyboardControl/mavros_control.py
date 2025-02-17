@@ -40,7 +40,7 @@ class MavControl(Node):
         #     while not client.wait_for_service(timeout_sec=1.0):
         #         self.get_logger().warn(f'Waiting for {service_name} service')
         
-        '''
+        
         self.mode_client = self.create_client(SetMode, '/mavros/set_mode')
         while not self.mode_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn(f'waiting for mode service')
@@ -52,7 +52,6 @@ class MavControl(Node):
         self.takeoff_client = self.create_client(CommandLong, '/mavros/cmd/command')
         while not self.takeoff_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn(f'waiting for takeoff service')
-        '''
 
         self.cmd_vel_publisher = self.create_publisher(Twist, "/mavros/setpoint_velocity/cmd_vel_unstamped", 10)
 
