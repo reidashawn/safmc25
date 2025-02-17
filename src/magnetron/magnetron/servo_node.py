@@ -11,7 +11,7 @@ class Pin:
     """
     max_interval = 0.5  # Maximum interval before resetting to default angle
 
-    def __init__(self, pin, freq, default_angle, angle=None, angle_range=210, min_duty=1.3uu, max_duty=12.45):
+    def __init__(self, pin, freq, default_angle, angle=None, angle_range=210, min_duty=1.3, max_duty=12.45):
         self.pin = pin
         GPIO.setmode(GPIO.BCM)  # Set GPIO mode to BCM
         GPIO.setup(pin, GPIO.OUT)  # Set pin as an output
