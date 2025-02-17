@@ -52,6 +52,7 @@ class MavControl(Node):
         self.takeoff_client = self.create_client(CommandLong, '/mavros/cmd/command')
         while not self.takeoff_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn(f'waiting for takeoff service')
+        
 
         self.cmd_vel_publisher = self.create_publisher(Twist, "/mavros/setpoint_velocity/cmd_vel_unstamped", 10)
 
@@ -112,9 +113,10 @@ class MavControl(Node):
 
     def vertical_movement(self, key):
         if key == keyboard.Key.down: 
-            Twist(linear=Vector3(x=0.0, y=0.0, z=-HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0))
+            self.vertical_movement.publish(Twist(linear=Vector3(x=0.0, y=0.0, z=-HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0)))
         else:
-            Twist(linear=Vector3(x=0.0, y=0.0, z=HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0))
+            self.vertical_movement.publish(Twist(linear=Vector3(x=0.0, y=0.0, z=HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0)))
+        self.get_logger().info(f"{key} vertical command issued")
         
 
     def on_press(self, key):
@@ -125,6 +127,7 @@ class MavControl(Node):
 
         if key_char in ["w", "a", "s", "d"]:
             self.horizontal_movement(key_char)
+        
         elif key_char == "g":
             self.change_mode("GUIDED")
         elif key_char == "l":
