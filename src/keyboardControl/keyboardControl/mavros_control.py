@@ -10,6 +10,11 @@ import sys
 import tty
 from pynput import keyboard
 
+
+HORIZONTAL_VELOCITY = 0.1
+TAKEOFF_HEIGHT = 1.0
+
+
 class MavControl(Node):
     '''
     Object to interact with MavROS via keyboard controls
@@ -35,6 +40,7 @@ class MavControl(Node):
         #     while not client.wait_for_service(timeout_sec=1.0):
         #         self.get_logger().warn(f'Waiting for {service_name} service')
         
+        '''
         self.mode_client = self.create_client(SetMode, '/mavros/set_mode')
         while not self.mode_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn(f'waiting for mode service')
@@ -46,11 +52,13 @@ class MavControl(Node):
         self.takeoff_client = self.create_client(CommandLong, '/mavros/cmd/command')
         while not self.takeoff_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn(f'waiting for takeoff service')
+        '''
 
         self.cmd_vel_publisher = self.create_publisher(Twist, "/mavros/setpoint_velocity/cmd_vel_unstamped", 10)
 
         self.listener_thread = threading.Thread(target=self.start_keyboard_listener, daemon=True)
         self.listener_thread.start()
+
 
         self.get_logger().info('Keyboard control is online')
         
@@ -82,16 +90,30 @@ class MavControl(Node):
         '''
         
 
-        takeoff_req = CommandLong.Request(broadcast=False, command=22, confirmation=0, param1=0.0, param2=0.0, param3=0.0, param4=0.0, param5=0.0, param6=0.0, param7=1.0)
+        takeoff_req = CommandLong.Request(broadcast=False, command=22, confirmation=0, param1=0.0, param2=0.0, param3=0.0, param4=0.0, param5=0.0, param6=0.0, param7=TAKEOFF_HEIGHT)
 
         future = self.takeoff_client.call_async(takeoff_req)
         self.get_logger().info(f"Takeoff command result: {future.result()}")
 
 
     def horizontal_movement(self, key: str):
-        if key == "w":
-            self.cmd_vel_publisher.publish(Twist(linear=Vector3(x=0.1, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)))
+        directions = {
+            # forward
+            "w": Twist(linear=Vector3(x=HORIZONTAL_VELOCITY, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
+            # backward
+            "s": Twist(linear=Vector3(x=-HORIZONTAL_VELOCITY, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
+            # left
+            "a": Twist(linear=Vector3(x=0.0, y=-HORIZONTAL_VELOCITY, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
+            # right
+            "d": Twist(linear=Vector3(x=0.0, y=HORIZONTAL_VELOCITY, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0))
+        }
+        if key in directions:
+            self.cmd_vel_publisher.publish(directions[key])
+            self.get_logger().info(f"{key} Horizontal command issued")
+
+       
         
+
     def on_press(self, key):
         try:
             key_char = key.char  # Detect character keys
