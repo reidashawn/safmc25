@@ -7,7 +7,7 @@ setup(
     version='0.0.0',
     packages=find_packages(
         where='.',  # Search for packages in the current directory
-        include=['controller', 'controller.helpers']  # Ensure helpers is included
+        include=['controller', 'controller.helpers', 'controller.madgwick_py']  # Ensure helpers is included
     ),
     data_files=[  # Make sure the resource files are included
         ('share/ament_index/resource_index/packages',
