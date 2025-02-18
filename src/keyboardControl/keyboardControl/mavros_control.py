@@ -135,6 +135,7 @@ class MavControl(Node):
         elif key_char == "h":
             self.change_mode("STABILIZE")
         elif key_char == "m":
+            # Arm drone
             self.arm_drone()
         elif key_char == "t":
             self.takeoff()
