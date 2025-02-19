@@ -34,7 +34,7 @@ class ControllerPubNode(Node):
             # Read and process serial data
             line = self.ser.read_from_serial()
             if line:
-                print(line)
+                # print(line)
                 split = line.split(',')
                 if len(split) != 8:
                     return
@@ -74,7 +74,7 @@ def main(args=None):
     controller_pub = ControllerPubNode()
     rclpy.spin(controller_pub)
     controller_pub.destroy_node()
-    rclpy.shutdown()
+    # rclpy.shutdown()
 
 
 if __name__ == '__main__':
