@@ -1,4 +1,7 @@
 import rclpy
+from rclpy.parameter import Parameter
+from rcl_interfaces.msg import SetParametersResult
+from std_srvs.srv import SetBool
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Twist
@@ -11,20 +14,20 @@ class ImuConverter(Node):
     def __init__(self):
         super().__init__('imu_converter')
 
-        # Declare parameters with default values
+    # Declare parameters with default values
         self.declare_parameter('beta', 0.2)
-        self.declare_parameter('zeta', 0.2)
+        self.declare_parameter('zeta', 0.3)
         self.declare_parameter('zero', 0)
         self.declare_parameter('max_vel', 1.0)
         self.declare_parameter('max_imu_pitch', 45)
         self.declare_parameter('min_imu_pitch', -20)
         self.declare_parameter('zero_imu_pitch', None)
-        self.declare_parameter('deadzone_imu_pitch', 10)
+        self.declare_parameter('deadzone_imu_pitch', 15)
 
         self.declare_parameter('max_imu_roll', 30)
         self.declare_parameter('min_imu_roll', -30)
         self.declare_parameter('zero_imu_roll', None)
-        self.declare_parameter('deadzone_imu_roll', 10)
+        self.declare_parameter('deadzone_imu_roll', 15)
 
 
         # Initialize parameters
@@ -49,12 +52,12 @@ class ImuConverter(Node):
 
         base_quat = quaternion.Quaternion([1, 0, 0, 0])
 
-        # Initialize Madgwick filter
+    # Initialize Madgwick filter
         self.madgwick = madgwickahrs.MadgwickAHRS(quaternion=base_quat, beta=self.beta, zeta=self.zeta)
 
         self.current_time = time.time()
 
-        # Subscriber to IMU data
+    # Subscriber to IMU data
         self.subscription = self.create_subscription(
             Imu,
             '/imu/data',  # Topic name
@@ -62,24 +65,28 @@ class ImuConverter(Node):
             10  # Queue size
         )
 
-        # Publisher for velocity command
+    # Publisher for velocity command
         self.velocity_publisher = self.create_publisher(
             Twist,
             '/cmd_vel_hor',  # Topic name for velocity command
             10  # Queue size
         )
 
-        # Publisher for Euler angles
+    # Publisher for Euler angles
         self.euler_publisher = self.create_publisher(
             Float32MultiArray,
             '/imu/euler',  # Topic name for Euler angles
             10  # Queue size
         )
 
-        # Parameter event callback for dynamic reconfiguration
+    # Parameter event callback for dynamic reconfiguration
         self.add_on_set_parameters_callback(self.parameter_callback)
 
         self.get_logger().info('IMU Subscriber and Velocity Publisher node has been started.')
+
+    # Service to recenter imu
+        self.center_srv = self.create_service(SetBool, "center_imu", self.center_imu)
+
 
     def parameter_callback(self, params):
         """
@@ -133,7 +140,7 @@ class ImuConverter(Node):
                 self.roll_deadzone = param.value
                 self.roll_joystick.dead_zone = self.roll_deadzone
 
-        return rclpy.parameter.SetParametersResult(successful=True)
+        return SetParametersResult(successful=True)
 
     def imu_callback(self, msg):
         # Process IMU data (you can modify the logic based on your use case)
@@ -179,8 +186,20 @@ class ImuConverter(Node):
         self.velocity_publisher.publish(velocity_msg)
 
         # Log the velocity command and Euler angles for debugging
-        self.get_logger().info(f"Published velocity: linear.x={velocity_msg.linear.x}, linear.y={velocity_msg.linear.y}")
-        self.get_logger().info(f"Published Euler angles: pitch={pitch}, roll={roll}, yaw={yaw}")
+        # self.get_logger().info(f"linear.x={velocity_msg.linear.x}, linear.y={velocity_msg.linear.y}")
+        # self.get_logger().info(f"pitch={pitch}, roll={roll}, yaw={yaw}")
+
+    def center_imu(self, request, response):
+        pitch, yaw, roll = self.madgwick.quaternion.to_euler_angles()
+        pitch_max = self.max_imu_pitch - self.zero_imu_pitch + pitch
+        pitch_min = pitch - (self.zero_imu_pitch - self.min_imu_pitch)
+        self.pitch_joystick.recenter(center=pitch, min_input=pitch_min, max_input=pitch_max)
+        roll_max = self.max_imu_roll - self.zero_imu_roll + roll
+        roll_min = roll - (self.zero_imu_roll - self.min_imu_roll)
+        self.roll_joystick.recenter(center=roll, min_input=roll_min, max_input=roll_max)
+        response.success = True
+        self.get_logger().info(f"IMU recentered to pitch {pitch}, roll {roll}")
+        return response
 
 def main(args=None):
     rclpy.init(args=args)

@@ -18,7 +18,7 @@ class Joystick:
             return self.min_output
         elif input < (self.zero - self.dead_zone / 2):  # Below zero deadzone
             # Log scaling output below deadzone
-            print(f"Scaling output below deadzone: -({self.min_output}) * ({input} - {self.min_input}) / ({self.zero} - {self.min_input}) = {-(self.min_output) * (input - self.min_input) / (self.zero - self.min_input)}")
+            # print(f"Scaling output below deadzone: -({self.min_output}) * ({input} - {self.min_input}) / ({self.zero} - {self.min_input}) = {-(self.min_output) * (input - self.min_input) / (self.zero - self.min_input)}")
             return (self.min_output) * (self.zero - input ) / (self.zero - self.min_input)  # Fix scaling
         elif input > (self.zero + self.dead_zone / 2):  # Above zero deadzone
             # Log scaling output above deadzone
@@ -26,3 +26,10 @@ class Joystick:
             return (self.max_output) * (input - self.zero) / (self.max_input - self.zero)  # Fix scaling
         else:  # Deadzone region
             return 0
+
+    def recenter(self, center, min_input=None, max_input=None):
+        self.zero = center
+        self.min_input = min_input if min_input is not None else self.min_input
+        self.max_input = max_input if max_input is not None else self.max_input
+
+        return True
