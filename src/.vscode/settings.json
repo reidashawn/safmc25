@@ -1,0 +1,6 @@
+{
+    "remote.autoForwardPortsSource": "output",
+    "python.languageServer": "Pylance",
+    "python.analysis.completeFunctionParens": true,
+    "python.analysis.diagnosticMode": "workspace",
+}
