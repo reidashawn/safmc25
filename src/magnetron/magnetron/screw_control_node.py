@@ -7,7 +7,6 @@ from interfaces.srv import ToggleStepper
 import threading
 
 
-
 class StepperClient(Node):
     def __init__(self):
         super().__init__('stepper_client')
