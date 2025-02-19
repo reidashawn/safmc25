@@ -3,94 +3,87 @@ from rclpy.node import Node
 from interfaces.srv import ToggleStepper  # Replace with your actual service definition
 import threading
 import sys
-import termios
 import tty
-import keyboard
+import termios
 
 class StepperClient(Node):
     def __init__(self):
         super().__init__('stepper_client')
-        self.client = self.create_client(ToggleStepper, 'rotate_stepper')
+        self.client = self.create_client(ToggleStepper, '/rotate_stepper')
         while not self.client.wait_for_service(timeout_sec=1.0):
             self.get_logger().warn('Service not available, waiting...')
-        
+
         self.lock = threading.Lock()
         self.running = True
         self.interval = 1
-        self.past_state = {"u": 0, "j": 0, "i": 0, "k": 0}
 
-        # Start a thread for reading key inputs
+        # Start keyboard listener thread
         self.input_thread = threading.Thread(target=self.key_listener, daemon=True)
         self.input_thread.start()
-    
-
 
     def key_listener(self):
-        """Reads multiple keypresses and updates stepper speed accordingly."""
-        self.running = True
+        """Reads key inputs and updates stepper rotation."""
         while self.running:
+            key = self.read_key()
+            if key:
+                self.handle_key_press(key)
 
-            if keyboard.is_pressed("u") and self.past_state["u"] == 0:
-                self.update_rotation(1, self.interval)
-            elif not keyboard.is_pressed("u"):
-                self.past_state["u"] = 0
 
-            if keyboard.is_pressed("j") and self.past_state["j"] == 0:
-                self.update_rotation(1, -self.interval)
-            elif not keyboard.is_pressed("j"):
-                self.past_state["j"] = 0
+    def read_key(self):
+        """Reads a single key press from stdin."""
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            ch = sys.stdin.read(1)
+            return ch
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
-            if keyboard.is_pressed("i") and self.past_state["i"] == 0:
-                self.update_rotation(2, self.interval)
-            elif not keyboard.is_pressed("i"):
-                self.past_state["i"] = 0
+    def handle_key_press(self, key):
+        """Handles key press events."""
+        key_map = {"u": "u", "j": "j", "i": "i", "k": "k"}
 
-            if keyboard.is_pressed("k") and self.past_state["k"] == 0:
-                self.update_rotation(2, -self.interval)
-            elif not keyboard.is_pressed("k"):
-                self.past_state["k"] = 0
+        if key in key_map:
+            print(f"{key} pressed")
+            stepper_id = 1 if key in ["u", "j"] else 2
+            direction = self.interval if key in ["u", "i"] else -self.interval
+            self.update_rotation(stepper_id, direction)
 
-            if keyboard.is_pressed("q"):
-                self.running = False
-                break
+        if key == "q":
+            self.running = False
 
-    
     def update_rotation(self, stepper, rotation):
-        """Updates the speed of the specified pin and sends a request."""
+        """Sends a request to update stepper rotation."""
         with self.lock:
             self.send_request(stepper, rotation)
-    
+
     def send_request(self, stepper, rotation):
         request = ToggleStepper.Request()
         request.stepper_id = stepper
-        request.speed = rotation
-        
+        request.speed = float(rotation)
+
         future = self.client.call_async(request)
         future.add_done_callback(self.response_callback)
-    
+
     def response_callback(self, future):
         try:
             response = future.result()
-            # if response.success:
-                # self.get_logger().info('Successfully toggled pin')
-            # else:
-                # self.get_logger().warn('Failed to toggle pin')
         except Exception as e:
             self.get_logger().error(f'Service call failed: {str(e)}')
 
-
 def main(args=None):
     rclpy.init(args=args)
-    pin_client = StepperClient()
-    
+    stepper_client = StepperClient()
+
     try:
-        rclpy.spin(pin_client)
+        rclpy.spin(stepper_client)
     except KeyboardInterrupt:
-        pin_client.get_logger().info('Shutting down PinClient node.')
+        stepper_client.get_logger().info('Shutting down StepperClient node.')
     finally:
-        pin_client.running = False
-        pin_client.input_thread.join()
-        pin_client.destroy_node()
+        stepper_client.running = False
+        stepper_client.input_thread.join()
+        stepper_client.destroy_node()
         rclpy.shutdown()
 
 if __name__ == '__main__':
