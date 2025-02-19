@@ -13,6 +13,7 @@ find_package(rosidl_default_generators REQUIRED)
 # find_package(<dependency> REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/TogglePin.srv"
+  "srv/ToggleStepper.srv"
 )
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
