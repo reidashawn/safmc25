@@ -11,7 +11,7 @@ import tty
 from pynput import keyboard
 
 
-HORIZONTAL_VELOCITY = 0.1
+HORIZONTAL_VELOCITY = 0.05
 TAKEOFF_HEIGHT = 1.0
 
 
@@ -97,6 +97,7 @@ class MavControl(Node):
 
 
     def horizontal_movement(self, key: str):
+        #TODO: AXES ARE SWAPPER. D GOES BACKWARDS, A GOES FORWARD
         directions = {
             # forward
             "w": Twist(linear=Vector3(x=HORIZONTAL_VELOCITY, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
@@ -113,9 +114,9 @@ class MavControl(Node):
 
     def vertical_movement(self, key):
         if key == keyboard.Key.down: 
-            self.vertical_movement.publish(Twist(linear=Vector3(x=0.0, y=0.0, z=-HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0)))
+            self.cmd_vel_publisher.publish(Twist(linear=Vector3(x=0.0, y=0.0, z=-HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0)))
         else:
-            self.vertical_movement.publish(Twist(linear=Vector3(x=0.0, y=0.0, z=HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0)))
+            self.cmd_vel_publisher.publish(Twist(linear=Vector3(x=0.0, y=0.0, z=HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0)))
         self.get_logger().info(f"{key} vertical command issued")
         
 
