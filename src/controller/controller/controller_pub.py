@@ -51,6 +51,8 @@ class ControllerPubNode(Node):
 
         # TODO: Subscribe to get state of drone for deconfliction
 
+        # TODO: Subscribe to get state of drone for deconfliction
+
         # Start a timer to update IMU data every 50ms (20 Hz)
         self.timer = self.create_timer(0.05, self.update)
 
