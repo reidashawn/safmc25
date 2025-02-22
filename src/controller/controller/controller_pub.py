@@ -6,6 +6,15 @@ from std_msgs.msg import Int32  # Import Int32 message type
 from controller.helpers.serial_helper import SerialHelper
 from mavros_msgs.srv import CommandBool, SetMode, CommandLong
 
+VALID_MODES = [
+    'GUIDED',
+    'LAND',
+    'STABILIZE',
+    'LOITER'
+]
+
+TAKEOFF_HEIGHT = 1.0
+MAV_CMD_NAV_TAKEOFF = 22 # From Mavlink MAV_CMD: https://mavlink.io/en/messages/common.html#mav_commands
 
 class ControllerPubNode(Node):
     def __init__(self):
@@ -80,6 +89,37 @@ class ControllerPubNode(Node):
 
         except Exception as e:
             self.get_logger().error(f"Error in update: {e}")
+
+    def change_mode(self, mode: str):
+        mode_upper = mode.upper()
+        if mode_upper not in VALID_MODES:
+            self.get_logger().error(f"{mode.upper()} is not a valid mode")
+            return
+        mode_req = SetMode.Request(custom_mode=mode_upper)
+        future = self.clients['mode'].call_async(mode_req)
+        self.get_logger().info(f"Change mode to {mode_upper} result: {future.result()}")
+
+    def arm_drone(self):
+        arm_req = CommandBool.Request(value=True)
+        future = self.clients['arm'].call_async(arm_req)
+        self.get_logger().info(f"Arm drone result: {future.result()}")
+
+    def takeoff(self):
+        takeoff_req = CommandLong.Request(
+            broadcast=False, 
+            command=MAV_CMD_NAV_TAKEOFF, 
+            confirmation=0, 
+            param1=0.0, 
+            param2=0.0, 
+            param3=0.0, 
+            param4=0.0, 
+            param5=0.0, 
+            param6=0.0, 
+            param7=TAKEOFF_HEIGHT
+            )
+        future = self.clients['takeoff'].call_async(takeoff_req)
+        self.get_logger().info(f"Takeoff command result: {future.result()}")
+
 
 
 def main(args=None):
