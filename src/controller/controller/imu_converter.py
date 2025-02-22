@@ -4,11 +4,14 @@ from rcl_interfaces.msg import SetParametersResult
 from std_srvs.srv import SetBool
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 from controller.madgwick_py import madgwickahrs, quaternion
 from controller.helpers.joystick import Joystick
 from std_msgs.msg import Float32MultiArray
 import time
+
+# maximum velocity in m/s when at full throttle 
+MAX_VELOCITY = 0.1
 
 class ImuConverter(Node):
     def __init__(self):
@@ -68,7 +71,7 @@ class ImuConverter(Node):
     # Publisher for velocity command
         self.velocity_publisher = self.create_publisher(
             Twist,
-            '/cmd_vel_hor',  # Topic name for velocity command
+            '/mavros/setpoint_velocity/cmd_vel_unstamped',  # Topic name for velocity command
             10  # Queue size
         )
 
@@ -175,12 +178,15 @@ class ImuConverter(Node):
         # Here, we use linear acceleration along the x-axis to control forward speed
         # and angular velocity along the z-axis for yaw control.
         
-        forward_vel = self.pitch_joystick.get_output(pitch)
-        side_vel = self.roll_joystick.get_output(roll)
+        forward_output = self.pitch_joystick.get_output(pitch)
+        side_output = self.roll_joystick.get_output(roll)
 
-        velocity_msg = Twist()
-        velocity_msg.linear.x = float(forward_vel)
-        velocity_msg.linear.y = float(side_vel)
+        forward_vel = forward_output * MAX_VELOCITY
+        side_vel = side_output * MAX_VELOCITY
+
+        velocity_linear = Vector3(x=forward_vel, y=side_vel, z=0.0)
+        velocity_angular = Vector3()
+        velocity_msg = Twist(linear=velocity_linear, angular=velocity_angular)
 
         # Publish velocity command
         self.velocity_publisher.publish(velocity_msg)
