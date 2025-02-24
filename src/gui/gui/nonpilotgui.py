@@ -42,9 +42,9 @@ class ControllerSubscriberNode(Node):
         self.create_subscription(Int32, '/controller/right/but4', self.right_but4_callback, qos_reliable)
         self.create_subscription(Int32, '/controller/right/pot', self.right_pot_callback, qos_reliable)
         self.create_subscription(Int32, '/controller/left/but1', self.left_but1_callback, qos_reliable)
-        # self.create_subscription(Int32, '/controller/left/but2', self.left_but2_callback, qos_reliable)
-        # self.create_subscription(Int32, '/controller/left/but3', self.left_but3_callback, qos_reliable)
-        # self.create_subscription(Int32, '/controller/left/but4', self.left_but4_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/but2', self.left_but2_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/but3', self.left_but3_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/but4', self.left_but4_callback, qos_reliable)
         self.create_subscription(Int32, '/controller/left/pot', self.left_pot_callback, qos_reliable)
         self.create_subscription(Float32MultiArray, '/imu/right/euler', self.right_imu_callback, qos_reliable)
 
@@ -92,17 +92,17 @@ class ControllerSubscriberNode(Node):
         self.data["left_but1"] = msg.data
         self.signal.emit(self.data)
     
-    # def left_but2_callback(self, msg):
-    #     self.data["left_but2"] = msg.data
-    #     self.signal.emit(self.data)
+    def left_but2_callback(self, msg):
+        self.data["left_but2"] = msg.data
+        self.signal.emit(self.data)
 
-    # def left_but3_callback(self, msg):
-    #     self.data["left_but3"] = msg.data
-    #     self.signal.emit(self.data)
+    def left_but3_callback(self, msg):
+        self.data["left_but3"] = msg.data
+        self.signal.emit(self.data)
     
-    # def left_but4_callback(self, msg):
-    #     self.data["left_but4"] = msg.data
-    #     self.signal.emit(self.data)
+    def left_but4_callback(self, msg):
+        self.data["left_but4"] = msg.data
+        self.signal.emit(self.data)
 
     def left_pot_callback(self, msg):
         self.data["left_pot"] = msg.data
@@ -212,15 +212,6 @@ class JoystickGraph(QMainWindow):
         self.setWindowTitle("Real-Time Graphs")
         self.setGeometry(QApplication.primaryScreen().geometry())
         self.ros_thread = RosThread()
-        
-        # self.pic_cam = QLabel(self)
-        # pixmap_cam = QPixmap("drone_00.jpg")        
-        # self.pic_cam.setPixmap(pixmap_cam)
-
-        # self.label_overview = QLabel("Overview", self)
-        # self.label_overview.setAlignment(Qt.AlignLeft)
-        # self.label_controller = QLabel("Controller", self)
-        # self.label_controller.setAlignment(Qt.AlignLeft)
 
         # ROLL GRAPH
         self.x_plot = pg.PlotWidget(title="Roll")
@@ -405,9 +396,9 @@ class JoystickGraph(QMainWindow):
         self.holdIndicators[Qt.Key_O].update_indicator(data["right_but3"])
         self.holdIndicators[Qt.Key_P].update_indicator(data["right_but4"])
         self.holdIndicators[Qt.Key_R].update_indicator(data["left_but1"])
-        # self.holdIndicators[Qt.Key_E].update_indicator(data["left_but2"])
-        # self.holdIndicators[Qt.Key_W].update_indicator(data["left_but3"])
-        # self.holdIndicators[Qt.Key_Q].update_indicator(data["left_but4"])          
+        self.holdIndicators[Qt.Key_E].update_indicator(data["left_but2"])
+        self.holdIndicators[Qt.Key_W].update_indicator(data["left_but3"])
+        self.holdIndicators[Qt.Key_Q].update_indicator(data["left_but4"])          
 
     def updatePot(self, data):
         x_value = data["right_imu"][1]
@@ -449,7 +440,7 @@ class JoystickGraph(QMainWindow):
         self.yaw_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
 
         self.z_curve.setData(self.time_data, self.z_data)  # Swap x and y values
-        self.z_plot.X(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
+        self.z_plot.setXRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
 
 
     def keyPressEvent(self, event):

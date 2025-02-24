@@ -15,7 +15,7 @@ from sensor_msgs.msg import CompressedImage
 
 from mavros_msgs.msg import State, OpticalFlow, StatusText
 from sensor_msgs.msg import Imu, BatteryState, Range
-from std_msgs.msg import Float64
+from std_msgs.msg import Int32, Float64, Float32MultiArray
 
 import transforms3d
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
@@ -43,25 +43,25 @@ text_colour = "#F0F1F1"
 background_colour = "#353535"
 window_colour = "#242424"
 
-class CameraSubscriberNode(Node):
-    def __init__(self):
-        super().__init__('camera_subscriber')
-        self.bridge = CvBridge()
-        self.subscription = self.create_subscription(
-            CompressedImage, 
-            "/camera/camera/color/image_raw/compressed",
-            self.camera_sub_callback, 10
-        )
-        self.signal = pyqtSignal(object)
+# class CameraSubscriberNode(Node):
+#     def __init__(self):
+#         super().__init__('camera_subscriber')
+#         self.bridge = CvBridge()
+#         self.subscription = self.create_subscription(
+#             CompressedImage, 
+#             "/camera/camera/color/image_raw/compressed",
+#             self.camera_sub_callback, 10
+#         )
+#         self.signal = pyqtSignal(object)
 
-    def camera_sub_callback(self, msg):
-        try:
-            cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
-        except Exception as e:
-            self.get_logger().error(f"Failed to convert image {e}")
-            return
+#     def camera_sub_callback(self, msg):
+#         try:
+#             cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
+#         except Exception as e:
+#             self.get_logger().error(f"Failed to convert image {e}")
+#             return
 
-        self.signal.emit(cv_image)
+#         self.signal.emit(cv_image)
 
 class MavrosSubscriberNode(Node):
     def __init__(self):
@@ -127,6 +127,81 @@ class MavrosSubscriberNode(Node):
         self.data["error"] = msg.text
         self.signal.emit(self.data)
 
+class ControllerSubscriberNode(Node):
+    def __init__(self):
+        super().__init__('mavros_subscriber')
+        self.create_subscription(Int32, '/controller/right/but1', self.right_but1_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/right/but2', self.right_but2_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/right/but3', self.right_but3_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/right/but4', self.right_but4_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/right/pot', self.right_pot_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/but1', self.left_but1_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/but2', self.left_but2_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/but3', self.left_but3_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/but4', self.left_but4_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/pot', self.left_pot_callback, qos_reliable)
+        self.create_subscription(Float32MultiArray, '/imu/right/euler', self.right_imu_callback, qos_reliable)
+
+        self.data = {
+            "right_but1": 0,
+            "right_but2": 0,
+            "right_but3": 0,
+            "right_but4": 0,
+            "right_pot": 2048,
+            "right_imu": [0, 0],
+            "left_but1": 0,
+            # "left_but2": 0,
+            # "left_but3": 0,
+            # "left_but4": 0,
+            "left_pot": 2048
+        }
+        self.signal = pyqtSignal(dict)
+    
+    def right_but1_callback(self, msg):
+        self.data["right_but1"] = msg.data
+        self.signal.emit(self.data)
+    
+    def right_but2_callback(self, msg):
+        self.data["right_but2"] = msg.data
+        self.signal.emit(self.data)
+
+    def right_but3_callback(self, msg):
+        self.data["right_but3"] = msg.data
+        self.signal.emit(self.data)
+    
+    def right_but4_callback(self, msg):
+        self.data["right_but4"] = msg.data
+        self.signal.emit(self.data)
+
+    def right_pot_callback(self, msg):
+        self.data["right_pot"] = msg.data
+        self.signal.emit(self.data)
+    
+    def right_imu_callback(self, msg):
+        self.data["right_imu"][0] = msg.data[0]
+        self.data["right_imu"][1] = msg.data[1]
+        self.signal.emit(self.data)
+
+    def left_but1_callback(self, msg):
+        self.data["left_but1"] = msg.data
+        self.signal.emit(self.data)
+    
+    def left_but2_callback(self, msg):
+        self.data["left_but2"] = msg.data
+        self.signal.emit(self.data)
+
+    def left_but3_callback(self, msg):
+        self.data["left_but3"] = msg.data
+        self.signal.emit(self.data)
+    
+    def left_but4_callback(self, msg):
+        self.data["left_but4"] = msg.data
+        self.signal.emit(self.data)
+
+    def left_pot_callback(self, msg):
+        self.data["left_pot"] = msg.data
+        self.signal.emit(self.data)
+
 class Button(QLabel):
     """A label that acts as an indicator, toggling between two colors when its key is pressed."""
 
@@ -138,7 +213,7 @@ class Button(QLabel):
         self.color_on = color_on  # Color when "on"
         self.color_off = color_off  # Color when "off"
 
-        self.setFixedSize(100, 100)  # Set indicator size
+        self.setFixedSize(50, 50)  # Set indicator size
         self.update_indicator(False)
 
     def toggle(self):
@@ -152,20 +227,26 @@ class Button(QLabel):
         self.setStyleSheet(f"background-color: {color};")
 
 class RosThread(QThread):
-    fwd_cam_received = pyqtSignal(object)
+    # fwd_cam_received = pyqtSignal(object)
     telem_received = pyqtSignal(dict)
+    controller_received = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
-        self.cam_node = CameraSubscriberNode()
-        self.cam_node.signal = self.fwd_cam_received
+        # self.cam_node = CameraSubscriberNode()
+        # self.cam_node.signal = self.fwd_cam_received
 
         self.telem_node = MavrosSubscriberNode()
         self.telem_node.signal = self.telem_received
 
+        self.controller_node = ControllerSubscriberNode()
+        self.controller_node.signal = self.controller_received
+
     def run(self):
         # rclpy.spin(self.cam_node)
         rclpy.spin(self.telem_node)
+        rclpy.spin(self.controller_node)
+
 
     def stop(self):
         rclpy.shutdown()
@@ -181,7 +262,7 @@ class MainWindow(QMainWindow):
         self.ros_thread = RosThread()
 
         # Forward cam (SHAWN)
-        self.label_fwd_cam = QLabel("Camera", self)
+        self.label_fwd_cam = QLabel("    Camera", self)
         self.label_fwd_cam.setFixedHeight(label_height)
         self.label_fwd_cam.setStyleSheet("color: #F0F1F1;"
                                          "background-color: #242424;")
@@ -192,14 +273,14 @@ class MainWindow(QMainWindow):
         self.pic_fwd_cam.setAlignment(Qt.AlignCenter)
         self.pic_fwd_cam.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.pixmap_cam = QPixmap("dwd_cam_fake.jpg")
-        self.ros_thread.fwd_cam_received.connect(self.updateCam)
+        # self.ros_thread.fwd_cam_received.connect(self.updateCam)
 
         # UAV Info
         self.label_UAV, self.info_UAV = self.createUAVInfo()
         self.ros_thread.telem_received.connect(self.updateUAVInfo)
 
         # Overview
-        self.label_overview = QLabel("Overview", self)
+        self.label_overview = QLabel("    Overview", self)
         self.label_overview.setFixedHeight(label_height)
         self.label_overview.setStyleSheet("color: #F0F1F1;"
                                          "background-color: #242424;")
@@ -256,6 +337,7 @@ class MainWindow(QMainWindow):
             Qt.Key_O: Button(Qt.Key_O, "#F0F1F1", "#464646", self),
             Qt.Key_P: Button(Qt.Key_P, "#F0F1F1", "#464646", self),
         }
+        self.ros_thread.controller_received.connect(self.updateController)
 
         # General
         self.setStyleSheet("background-color: #353535;")
@@ -265,7 +347,7 @@ class MainWindow(QMainWindow):
         self.initUI()
     
     def createUAVInfo(self):
-        label_UAV = QLabel("Status", self)
+        label_UAV = QLabel("    Status", self)
         label_UAV.setFixedHeight(label_height)
         label_UAV.setStyleSheet("color: #F0F1F1;"
                                 "background-color: #242424;")
@@ -308,6 +390,62 @@ class MainWindow(QMainWindow):
             self.labels[key].setText(f"{key.capitalize()}: {value}")
             self.labels[key].setStyleSheet("color: #F0F1F1;"
                                            "background-color: #242424;")
+
+    def updateController(self, data):
+        self.updateButtons(data)
+        self.updatePot(data)
+
+    def updateButtons(self, data):
+        self.holdIndicators[Qt.Key_U].update_indicator(data["right_but1"])
+        self.holdIndicators[Qt.Key_I].update_indicator(data["right_but2"])
+        self.holdIndicators[Qt.Key_O].update_indicator(data["right_but3"])
+        self.holdIndicators[Qt.Key_P].update_indicator(data["right_but4"])
+        self.holdIndicators[Qt.Key_R].update_indicator(data["left_but1"])
+        self.holdIndicators[Qt.Key_E].update_indicator(data["left_but2"])
+        self.holdIndicators[Qt.Key_W].update_indicator(data["left_but3"])
+        self.holdIndicators[Qt.Key_Q].update_indicator(data["left_but4"])          
+
+    def updatePot(self, data):
+        x_value = data["right_imu"][1]
+        y_value = data["right_imu"][0]
+        yaw_value = data["right_pot"]
+        z_value = data["left_pot"]
+        
+        current_time = time.time() - self.start_time
+        self.x_data.append(-x_value)
+        self.y_data.append(y_value)
+        self.yaw_data.append(yaw_value)
+        self.z_data.append(z_value)
+        self.time_data.append(current_time)
+
+        # Trim data to last `time_window` seconds
+        while self.time_data and (current_time - self.time_data[0] > self.time_window):
+            self.x_data.pop(0)
+            self.y_data.pop(0)
+            self.yaw_data.pop(0)
+            self.z_data.pop(0)
+            self.time_data.pop(0)
+
+        x_trail = []
+        y_trail = []
+        for i in range(len(self.time_data)):
+            if current_time - self.time_data[i] <= self.trail_window:
+                x_trail.append(self.x_data[i])
+                y_trail.append(self.y_data[i])
+
+        self.x_curve.setData(self.x_data, self.time_data)  # Swap x and y values
+        self.x_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
+
+        self.y_curve.setData(self.time_data, self.y_data)
+        self.y_plot.setXRange(max(0, current_time - self.time_window), current_time)
+
+        self.xy_curve.setData(x_trail, y_trail)
+
+        self.yaw_curve.setData(self.yaw_data, self.time_data)  # Swap x and y values
+        self.yaw_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
+
+        self.z_curve.setData(self.time_data, self.z_data)  # Swap x and y values
+        self.z_plot.setXRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
 
     def buttonUI(self):
         self.buttons = QGridLayout()
@@ -359,6 +497,11 @@ class MainWindow(QMainWindow):
             overview_container.addWidget(self.label_overview)
             overview_container.addWidget(self.pic_drone)
             overview_container.addLayout(self.buttons)
+
+            status_container = QVBoxLayout()
+            status_container.setSpacing(0)
+            status_container.addWidget(self.label_UAV)
+            status_container.addWidget(self.pic_fwd_cam)
 
             grid = QGridLayout()
             grid.setSpacing(5)

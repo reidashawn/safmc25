@@ -161,11 +161,11 @@ class MainWindow(QMainWindow):
         # Forward cam (SHAWN)
         self.label_fwd_cam, self.pic_fwd_cam = self.createCam("    Forward Cam")
         self.ros_thread.fwd_cam_received.connect(self.updateCam)
-        self.updateCam_fake(self.pic_fwd_cam)
+        # self.updateCam_fake(self.pic_fwd_cam)
 
         # Downward cam
         self.label_dwd_cam, self.pic_dwd_cam = self.createCam("    Downward Cam")
-        self.updateCam_fake(self.pic_dwd_cam)
+        # self.updateCam_fake(self.pic_dwd_cam)
 
         # UAV Info
         self.label_UAV, self.info_UAV = self.createUAVInfo()
