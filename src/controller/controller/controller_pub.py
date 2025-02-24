@@ -31,15 +31,15 @@ class ControllerPubNode(Node):
         self.ser = SerialHelper(serial_port, baud_rate)
 
         # Clients
-        self.clients = {
-            'mode': self.create_client(SetMode, '/mavros/set_mode'),
-            'arm': self.create_client(CommandBool, '/mavros/cmd/arming'),
-            'takeoff': self.create_client(CommandLong, '/mavros/cmd/command')
-        }
+        # self.clients = {
+        #     'mode': self.create_client(SetMode, '/mavros/set_mode'),
+        #     'arm': self.create_client(CommandBool, '/mavros/cmd/arming'),
+        #     'takeoff': self.create_client(CommandLong, '/mavros/cmd/command')
+        # }
 
-        for service_name, client in self.clients.items():
-            while not client.wait_for_service(timeout_sec=1.0):
-                self.get_logger().warn(f'Waiting for {service_name} service')
+        # for service_name, client in self.clients.items():
+        #     while not client.wait_for_service(timeout_sec=1.0):
+        #         self.get_logger().warn(f'Waiting for {service_name} service')
         
         # Create publishers
         self.imu_publisher = self.create_publisher(Imu, 'imu/' + self.hand + '/data', 10)
