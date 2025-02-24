@@ -434,16 +434,16 @@ class MainWindow(QMainWindow):
 
     def updateStatus(self, data):
         for key, value in data.items():
-            # if key != "error":
+            if key != "error":
                 self.statuses[key].setText(f"{key.capitalize()}: {value}")
                 self.statuses[key].setStyleSheet("color: #F0F1F1;"
                                             "background-color: #242424;")
-            # else:
-            #     while len(self.messages) >= messages_max :
-            #         self.messages.pop(0)
-            #     for i in len(self.messages):
-            #         j = len(self.messages) - 1 - i
-            #         self.messages[j].setTest(self.messages[j], self)
+            else:
+                while len(self.messages) >= messages_max :
+                    self.messages.pop(0)
+                for i in len(self.messages):
+                    j = len(self.messages) - 1 - i
+                    self.messages[j].setTest(self.messages[j], self)
                     
     def updateButtons(self, data):
         self.buttons[Qt.Key_U].update_button(data["right_but1"])
