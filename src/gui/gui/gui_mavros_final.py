@@ -127,26 +127,6 @@ class MavrosSubscriberNode(Node):
         self.data["error"] = msg.text
         self.signal.emit(self.data)
 
-class RosThread(QThread):
-    fwd_cam_received = pyqtSignal(object)
-    telem_received = pyqtSignal(dict)
-
-    def __init__(self):
-        super().__init__()
-        self.cam_node = CameraSubscriberNode()
-        self.cam_node.signal = self.fwd_cam_received
-
-        self.telem_node = MavrosSubscriberNode()
-        self.telem_node.signal = self.telem_received
-
-    def run(self):
-        # rclpy.spin(self.cam_node)
-        rclpy.spin(self.telem_node)
-
-    def stop(self):
-        rclpy.shutdown()
-        self.wait()
-
 class Button(QLabel):
     """A label that acts as an indicator, toggling between two colors when its key is pressed."""
 
@@ -171,6 +151,25 @@ class Button(QLabel):
         color = self.color_on if is_on else self.color_off
         self.setStyleSheet(f"background-color: {color};")
 
+class RosThread(QThread):
+    fwd_cam_received = pyqtSignal(object)
+    telem_received = pyqtSignal(dict)
+
+    def __init__(self):
+        super().__init__()
+        self.cam_node = CameraSubscriberNode()
+        self.cam_node.signal = self.fwd_cam_received
+
+        self.telem_node = MavrosSubscriberNode()
+        self.telem_node.signal = self.telem_received
+
+    def run(self):
+        # rclpy.spin(self.cam_node)
+        rclpy.spin(self.telem_node)
+
+    def stop(self):
+        rclpy.shutdown()
+        self.wait()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -189,6 +188,7 @@ class MainWindow(QMainWindow):
         self.label_fwd_cam.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
         
         self.pic_fwd_cam = QLabel(self)
+        self.pic_fwd_cam.setStyleSheet("background-color: #242424")
         self.pic_fwd_cam.setAlignment(Qt.AlignCenter)
         self.pic_fwd_cam.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.pixmap_cam = QPixmap("dwd_cam_fake.jpg")
@@ -265,14 +265,13 @@ class MainWindow(QMainWindow):
         self.initUI()
     
     def createUAVInfo(self):
-        label_UAV = QLabel("    UAV Info", self)
-        label_UAV.setGeometry(margin, 2 * margin + label_height + camera_height, info_width, label_height)
-        label_UAV.setFixedSize(info_width, label_height)
+        label_UAV = QLabel("Status", self)
+        label_UAV.setFixedHeight(label_height)
         label_UAV.setStyleSheet("color: #F0F1F1;"
                                 "background-color: #242424;")
         label_UAV.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
 
-        self.info_UAV = QVBoxLayout()
+        self.info_UAV = QGridLayout()
         self.labels = {
             "armed": QLabel("Armed: Unknown"),
             "mode": QLabel("Mode: Unknown"),
@@ -310,50 +309,70 @@ class MainWindow(QMainWindow):
             self.labels[key].setStyleSheet("color: #F0F1F1;"
                                            "background-color: #242424;")
 
+    def buttonUI(self):
+        self.buttons = QGridLayout()
+        self.buttons.setSpacing(5)
+
+        self.buttons.addWidget(self.L1_label, 0, 0)
+        self.buttons.addWidget(self.L2_label, 1, 0)
+        self.buttons.addWidget(self.L3_label, 2, 0)
+        self.buttons.addWidget(self.L4_label, 3, 0)
+
+        self.buttons.addWidget(self.holdIndicators[Qt.Key_R], 0, 1)
+        self.buttons.addWidget(self.holdIndicators[Qt.Key_E], 1, 1)
+        self.buttons.addWidget(self.holdIndicators[Qt.Key_W], 2, 1)
+        self.buttons.addWidget(self.holdIndicators[Qt.Key_Q], 3, 1)
+
+        self.buttons.addWidget(self.holdIndicators[Qt.Key_U], 0, 2)
+        self.buttons.addWidget(self.holdIndicators[Qt.Key_I], 1, 2)
+        self.buttons.addWidget(self.holdIndicators[Qt.Key_O], 2, 2)
+        self.buttons.addWidget(self.holdIndicators[Qt.Key_P], 3, 2)
+
+        self.buttons.addWidget(self.R1_label, 0, 3)
+        self.buttons.addWidget(self.R2_label, 1, 3)
+        self.buttons.addWidget(self.R3_label, 2, 3)
+        self.buttons.addWidget(self.R4_label, 3, 3)
+
+        self.buttons.setRowStretch(0, 1)
+        self.buttons.setRowStretch(1, 1)
+        self.buttons.setRowStretch(2, 1)
+        self.buttons.setRowStretch(3, 1)
+
+        self.buttons.setColumnStretch(0, 1)
+        self.buttons.setColumnStretch(1, 2)
+        self.buttons.setColumnStretch(2, 2)
+        self.buttons.setColumnStretch(3, 1)
+
     def initUI(self):
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
+            self.buttonUI()
 
-        grid1 = QGridLayout()
-        grid1.setSpacing(0)
+            central_widget = QWidget()
+            self.setCentralWidget(central_widget)
 
-        grid2 = QGridLayout()
-        grid2.setSpacing(0)
+            camera_container = QVBoxLayout()
+            camera_container.setSpacing(0)
+            camera_container.addWidget(self.label_fwd_cam)
+            camera_container.addWidget(self.pic_fwd_cam)
 
-        vbox = QVBoxLayout()
+            overview_container = QVBoxLayout()
+            overview_container.setSpacing(0)
+            overview_container.addWidget(self.label_overview)
+            overview_container.addWidget(self.pic_drone)
+            overview_container.addLayout(self.buttons)
 
-        spacer = QSpacerItem(10, 10, QSizePolicy.Minimum, QSizePolicy.Expanding)
+            grid = QGridLayout()
+            grid.setSpacing(5)
 
-        # create label objects here
-        grid1.addWidget(self.label_fwd_cam, 0, 0)
-        grid1.addItem(spacer, 0, 1)
-        grid1.addWidget(self.label_dwd_cam, 0, 2)
+            grid.addLayout(camera_container, 0, 0)
+            grid.addLayout(overview_container, 0, 1)
+            grid.addLayout(self.info_UAV, 1, 0)
 
-        grid1.addWidget(self.pic_fwd_cam, 1, 0)
-        grid1.addItem(spacer, 1, 1)
-        grid1.addWidget(self.pic_dwd_cam, 1, 2)
+            grid.setRowStretch(0, 3)
+            grid.setRowStretch(1, 1)
+            grid.setColumnStretch(0, 22)
+            grid.setColumnStretch(1, 10)
 
-        # grid.addWidget(self.label_spacer, 2, 0)  # Span across columns 0-2
-
-        grid2.addWidget(self.label_UAV, 0, 0)
-        grid2.addLayout(self.info_UAV, 1, 0)
-
-        grid1.addItem(spacer, 0, 1)
-        grid1.addItem(spacer, 1, 1)
-
-        grid2.addWidget(self.label_payload, 0, 2)
-        grid2.addWidget(self.pic_drone, 1, 2)
-
-        grid1.addItem(spacer, 0, 3)
-        grid1.addItem(spacer, 1, 3)
-
-        grid2.addWidget(self.label_ctrl, 0, 4)
-        grid2.addWidget(self.pic_ctrl, 1, 4)
-
-        vbox.addLayout(grid1)
-        vbox.addLayout(grid2)
-
-        central_widget.setLayout(vbox)
+            central_widget.setLayout(grid)
 
     def resizeEvent(self, event):
         self.updatePixmap()
