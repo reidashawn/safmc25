@@ -16,7 +16,7 @@ calData calib = { 0 };  //Calibration data
 AccelData accelData;    //Sensor data
 GyroData gyroData;
 MagData magData;
-JsonDocument controllerData;
+// JsonDocument controllerData;
 
 
 void setup() {
@@ -81,38 +81,44 @@ void loop() {
   IMU.update();
   IMU.getAccel(&accelData);
   
-  controllerData["accelX"] = accelData.accelX;
-  controllerData["accelY"] = accelData.accelY;
-  controllerData["accelZ"] = accelData.accelZ;
+  // controllerData["accelX"] = accelData.accelX;
+  // controllerData["accelY"] = accelData.accelY;
+  // controllerData["accelZ"] = accelData.accelZ;
   
-  controllerData["gyroX"] = gyroData.gyroX;
-  controllerData["gyroY"] = gyroData.gyroY;
-  controllerData["gyroZ"] = gyroData.gyroZ;
+  // controllerData["gyroX"] = gyroData.gyroX;
+  // controllerData["gyroY"] = gyroData.gyroY;
+  // controllerData["gyroZ"] = gyroData.gyroZ;
 
-  controllerData["pot"] = analogRead(POT_PIN);
-  controllerData["but1"] = digitalRead(BUT1_PIN);
-  controllerData["but2"] = digitalRead(BUT2_PIN);
-  controllerData["but3"] = digitalRead(BUT3_PIN);
-  controllerData["but4"] = digitalRead(BUT4_PIN);
+  // controllerData["pot"] = analogRead(POT_PIN);
+  // controllerData["but1"] = digitalRead(BUT1_PIN);
+  // controllerData["but2"] = digitalRead(BUT2_PIN);
+  // controllerData["but3"] = digitalRead(BUT3_PIN);
+  // controllerData["but4"] = digitalRead(BUT4_PIN);
 
-  serializeJson(controllerData, Serial);
-  // Serial.print(accelData.accelX);
-  // Serial.print(", ");
-  // Serial.print(accelData.accelY);
-  // Serial.print(", ");
-  // Serial.print(accelData.accelZ);
-  // Serial.print(", ");
-  // IMU.getGyro(&gyroData);
-  // Serial.print(gyroData.gyroX);
-  // Serial.print(", ");
-  // Serial.print(gyroData.gyroY);
-  // Serial.print(", ");
-  // Serial.print(gyroData.gyroZ);
-  // Serial.print(", ");
-  // Serial.print(analogRead(POT_PIN));
-  // Serial.print(", ");
-  // Serial.print(digitalRead(BUT1_PIN));
-  // Serial.println();
+  // serializeJson(controllerData, Serial);
+  Serial.print(accelData.accelX);
+  Serial.print(", ");
+  Serial.print(accelData.accelY);
+  Serial.print(", ");
+  Serial.print(accelData.accelZ);
+  Serial.print(", ");
+  IMU.getGyro(&gyroData);
+  Serial.print(gyroData.gyroX);
+  Serial.print(", ");
+  Serial.print(gyroData.gyroY);
+  Serial.print(", ");
+  Serial.print(gyroData.gyroZ);
+  Serial.print(", ");
+  Serial.print(analogRead(POT_PIN));
+  Serial.print(", ");
+  Serial.print(digitalRead(BUT1_PIN));
+  Serial.print(", ");
+  Serial.print(digitalRead(BUT2_PIN));
+  Serial.print(", ");
+  Serial.print(digitalRead(BUT3_PIN));
+  Serial.print(", ");
+  Serial.print(digitalRead(BUT4_PIN));
   Serial.println();
+  // Serial.println();
   delay(100);
 }
