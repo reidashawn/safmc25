@@ -71,7 +71,7 @@ class ImuConverter(Node):
     # Publisher for velocity command
         self.velocity_publisher = self.create_publisher(
             Twist,
-            '/mavros/setpoint_velocity/cmd_vel_unstamped',  # Topic name for velocity command
+            '/cmd_vel_hor',  # Topic name for velocity command
             10  # Queue size
         )
 
