@@ -5,14 +5,6 @@ from sensor_msgs.msg import Imu
 from std_msgs.msg import Int32  # Import Int32 message type
 from controller.helpers.serial_helper import SerialHelper
 
-VALID_MODES = [
-    'GUIDED',
-    'LAND',
-    'STABILIZE',
-    'LOITER'
-]
-
-
 
 class ControllerPubNode(Node):
     def __init__(self):

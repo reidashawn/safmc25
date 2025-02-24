@@ -2,10 +2,10 @@ from std_msgs.msg import Int32
 import time
 
 class Button:
-    def __init__(self, node, topic, long_press_time=2, press_callback=None, short_callback=None, long_callback=None):
+    def __init__(self, topic, long_press_time=2, press_callback=None, short_callback=None, long_callback=None):
         self.topic = topic
-        self.node = node
-        self.sub = self.node.create_subscription(Int32, topic, self.data_callback, 10)
+        # self.node = node
+        # self.sub = self.node.create_subscription(Int32, topic, self.data_callback, 10)
         self.press_callback = press_callback
         self.short_callback = short_callback
         self.long_callback = long_callback
