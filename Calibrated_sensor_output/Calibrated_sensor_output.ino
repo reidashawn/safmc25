@@ -2,10 +2,10 @@
 #include <Wire.h>
 #include <ArduinoJson.h>
 #define POT_PIN 26
-#define BUT1_PIN 35
-#define BUT2_PIN 32
-#define BUT3_PIN 33
-#define BUT4_PIN 25
+#define BUT1_PIN 25
+#define BUT2_PIN 33
+#define BUT3_PIN 32
+#define BUT4_PIN 35
 #define IMU_ADDRESS 0x68    //Change to the address of the IMU
 #define PERFORM_CALIBRATION //Comment to disable startup calibration
 MPU6050 IMU;               //Change to the name of any supported IMU! 
