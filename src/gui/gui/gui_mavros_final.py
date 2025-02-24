@@ -348,7 +348,7 @@ class MainWindow(QMainWindow):
             2: QPixmap("drone_00.jpg"),
             3: QPixmap("drone_00.jpg"),
             4: QPixmap("drone_00.jpg"),
-            5: QPixmap("drone_00.jpg"),
+            5: QPixmap("drone_00.jpg")
         }
 
         self.pic_drone = QLabel(self)
@@ -415,7 +415,7 @@ class MainWindow(QMainWindow):
         
         self.messages = []
         for i in range(messages_max):
-            label = QLabel("", self)
+            label = QLabel("")
             label.setStyleSheet("background-color: #242424;"
                                 "color: #F0F1F1;")
             self.messages.append(label)
@@ -441,7 +441,7 @@ class MainWindow(QMainWindow):
             else:
                 while len(self.messages) >= messages_max :
                     self.messages.pop(0)
-                for i in len(self.messages):
+                for i in range(len(self.messages)):
                     j = len(self.messages) - 1 - i
                     self.messages[j].setText(self.statuses[key][j], self)
                     print(self.statuses[key][j])
