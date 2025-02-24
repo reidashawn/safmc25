@@ -28,7 +28,8 @@ setup(
         'console_scripts': [
             'controller_pub = controller.controller_pub:main', 
             'imu_converter = controller.imu_converter:main',
-            'pot_converter = controller.pot_converter:main'  # Adjust the node entry point accordingly
+            'pot_converter = controller.pot_converter:main',
+            'button_manager = controller.button_manager:main'
         ],
     },
 )
