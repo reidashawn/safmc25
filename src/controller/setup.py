@@ -31,6 +31,7 @@ setup(
             'pot_converter = controller.pot_converter:main',
             'button_manager = controller.button_manager:main'
             'drone_movement = controller.drone_movement:main'   # Adjust the node entry point accordingly
+            'button_manager = controller.button_manager:main'
         ],
     },
 )
