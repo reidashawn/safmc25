@@ -317,8 +317,8 @@ class MainWindow(QMainWindow):
         grid2.addWidget(self.label_ctrl, 0, 4)
         grid2.addWidget(self.pic_ctrl, 1, 4)
 
-        vbox.addLayout(grid1)
         vbox.addLayout(grid2)
+        vbox.addLayout(grid1)
 
         central_widget.setLayout(vbox)
         
