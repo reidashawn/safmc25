@@ -12,6 +12,8 @@ class PotConverter(Node):
     def __init__(self):
         super().__init__('pot_converter')
 
+        self.declare_parameter('hand', 'right')  # Declare 'hand' parameter
+
         # Declare parameters
         self.declare_parameter('alpha', 0.5, 
             ParameterDescriptor(type=ParameterType.PARAMETER_DOUBLE, description="Low-pass filter coefficient"))
@@ -20,6 +22,13 @@ class PotConverter(Node):
         self.declare_parameter('joy_max_input', 56)
         self.declare_parameter('joy_min_output', 0.0)
         self.declare_parameter('joy_max_output', 0.5)
+
+        self.hand = self.get_parameter('hand').value
+
+        # Validate 'hand' parameter
+        if self.hand not in ["right", "left"]:
+            self.get_logger().warn("Invalid 'hand' parameter! Must be 'right' or 'left'. Defaulting to 'right'.")
+            self.hand = "right"
 
         # Get initial parameter values
         self.alpha = self.get_parameter('alpha').value
@@ -34,8 +43,8 @@ class PotConverter(Node):
         self.joystick = Joystick(joy_zero, 10, joy_max_input, joy_min_input, joy_max_output)
 
         # Subscribe to pot topic
-        self.pub = self.create_publisher(Float32, '/cmd_vel_vert', 10)
-        self.subscription = self.create_subscription(Int32, 'controller/pot', self.pot_callback, 10)
+        self.pub = self.create_publisher(Float32, self.hand + '/cmd_vel_vert', 10)
+        self.subscription = self.create_subscription(Int32, self.hand +  'controller/pot', self.pot_callback, 10)
         
 
         # Load calibration data from the same directory as the script
