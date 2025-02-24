@@ -77,7 +77,6 @@ class ButtonManagerNode(Node):
         arm_req = CommandBool.Request(value=True)
         future = self.mavros_clients['arm'].call_async(arm_req)
         rclpy.spin_until_future_complete(self, future)
-        print(future.result().success)
         return future.result()
 
     def takeoff(self):
