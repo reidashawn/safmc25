@@ -13,18 +13,26 @@ class ControllerPubNode(Node):
         # Declare parameters for serial port and baud rate with default values
         self.declare_parameter('serial_port', '/dev/ttyUSB0')
         self.declare_parameter('baud_rate', 115200)
+        self.declare_parameter('hand', 'right')  # Declare 'hand' parameter
+
 
         # Get the parameters set at runtime (or use the defaults)
         serial_port = self.get_parameter('serial_port').get_parameter_value().string_value
         baud_rate = self.get_parameter('baud_rate').get_parameter_value().integer_value
+        self.hand = self.get_parameter('hand').get_parameter_value().string_value
+
+        # Validate 'hand' parameter
+        if self.hand not in ["right", "left"]:
+            self.get_logger().warn("Invalid 'hand' parameter! Must be 'right' or 'left'. Defaulting to 'right'.")
+            self.hand = "right"
 
         # Initialize the SerialHelper with the parameters
         self.ser = SerialHelper(serial_port, baud_rate)
         
         # Create publishers
-        self.imu_publisher = self.create_publisher(Imu, 'imu/data', 10)
-        self.pot_publisher = self.create_publisher(Int32, 'controller/pot', 10)
-        self.but_publisher = self.create_publisher(Int32, 'controller/but1', 10)
+        self.imu_publisher = self.create_publisher(Imu, 'imu/' + self.hand + '/data', 10)
+        self.pot_publisher = self.create_publisher(Int32, 'controller/' + self.hand + '/pot', 10)
+        self.but_publisher = self.create_publisher(Int32, 'controller/' + self.hand + '/but1', 10)
 
         # Start a timer to update IMU data every 50ms (20 Hz)
         self.timer = self.create_timer(0.05, self.update)
