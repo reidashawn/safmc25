@@ -326,6 +326,9 @@ class MainWindow(QMainWindow):
             "optflow": QLabel("Optflow: Unknown")
         }
 
+        for status in self.statuses:
+            status.setAlignment(Qt.AlignCenter)
+
         row, column = 0, 0
         for label in self.statuses.values():
             label.setStyleSheet("background-color: #242424;"
