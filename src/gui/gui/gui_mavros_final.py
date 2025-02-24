@@ -358,19 +358,19 @@ class MainWindow(QMainWindow):
         self.pixmap_drone = self.drone_states[0]
 
     def createButtons(self):
-        self.L1_label = QLabel("Increase Alt", self)
+        self.L1_label = QLabel("Increase Altitude", self)
         self.L1_label.setAlignment(Qt.AlignCenter)
-        self.L2_label = QLabel("Decrease Alt", self)
+        self.L2_label = QLabel("Decrease Altitude", self)
         self.L2_label.setAlignment(Qt.AlignCenter)
         self.L3_label = QLabel("Receive L Payload", self)
         self.L3_label.setAlignment(Qt.AlignCenter)
         self.L4_label = QLabel("Dropoff L Payload", self)
         self.L4_label.setAlignment(Qt.AlignCenter)
-        self.R1_label = QLabel("Arm", self)
+        self.R1_label = QLabel("Arm / Guided / Takeoff", self)
         self.R1_label.setAlignment(Qt.AlignCenter)
-        self.R2_label = QLabel("Takeoff", self)
+        self.R2_label = QLabel("Land", self)
         self.R2_label.setAlignment(Qt.AlignCenter)
-        self.R3_label = QLabel("Land", self)
+        self.R3_label = QLabel("Lock Axis", self)
         self.R3_label.setAlignment(Qt.AlignCenter)
         self.R4_label = QLabel("Set Zero", self)
         self.R4_label.setAlignment(Qt.AlignCenter)
@@ -443,7 +443,7 @@ class MainWindow(QMainWindow):
                     self.messages.pop(0)
                 for i in len(self.messages):
                     j = len(self.messages) - 1 - i
-                    self.messages[j].setTest(self.messages[j], self)
+                    self.messages[j].setText(self.statuses[key][j], self)
                     
     def updateButtons(self, data):
         self.buttons[Qt.Key_U].update_button(data["right_but1"])
