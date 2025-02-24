@@ -16,9 +16,10 @@ from sensor_msgs.msg import CompressedImage
 from mavros_msgs.msg import State
 from sensor_msgs.msg import Imu, BatteryState
 from std_msgs.msg import Float64
-import tf_transformations
-#hello
+# import tf_transformations
+# from controller.madgwick_py import quarternion
 
+import transforms3d
 
 # Dimensions
 margin = 10
@@ -86,7 +87,7 @@ class MavrosSubscriberNode(Node):
             msg.orientation.z,
             msg.orientation.w
         ]
-        roll, pitch, yaw = tf_transformations.euler_from_quaternion(quaternion)
+        roll, pitch, yaw = transforms3d.euler.euler2quat(quaternion)
         self.data["roll"] = f"{roll:.2f}"
         self.data["pitch"] = f"{pitch:.2f}"
         self.data["yaw"] = f"{yaw:.2f}"
