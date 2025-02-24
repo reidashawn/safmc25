@@ -1,11 +1,11 @@
 import rclpy
 from rclpy.node import Node
-from rcl_interfaces.msg import ParameterType, ParameterDescriptor
 from geometry_msgs.msd import Twist
-from std_msgs.msg import Float32, Int32
+from std_msgs.msg import Float32
 from std_srvs.srv import SetBool
 from interfaces.srv import SetFloat
-import os
+import time
+import threading
 
 class DroneMovement(Node):
     def __init__(self):
@@ -17,12 +17,15 @@ class DroneMovement(Node):
         self.yaw_vel_sub = self.create_subscription(Float32, '/right/cmd_vel_vert', self.yaw_vel_callback, 10)
         # self.vert_vel_sub = self.create_subscription(Float32, '/left/cmd_vel_vert', self.vert_vel_callback, 10)
         self.vert_srv = self.create_service(SetFloat, '/vert_vel', self.vert_vel_srv_callback)
+        self.last_vert_time = time.time()
+        self.last_lock_time = time.time()
         self.lock_srv = self.create_service(SetBool, '/lock_axis', self.lock_axis_callback)
         self.linear_x = 0
         self.linear_y = 0
         self.linear_z = 0
         self.angular_z = 0
         self.axis_lock = False
+        self.thread = threading.Thread(target=self.thread_callback, daemon=True)  # Daemon thread to toggle PWM
         
     def publish_vel(self):
         msg = Twist()
@@ -33,6 +36,13 @@ class DroneMovement(Node):
         self.pub.publish_message(msg)
         return
     
+    def thread_callback(self):
+        if time.time() - self.last_lock_time > .5:
+            self.axis_lock = False
+        if time.time() - self.last_vert_time > .2:
+            self.linear_z = 0
+        self.publish_vel()
+
     def hor_vel_callback(self, data):
         if self.axis_lock:
             if data.linear.x > data.linear.y:
@@ -59,11 +69,13 @@ class DroneMovement(Node):
         self.linear_z = request.float 
         response.success = True
         self.publish_vel()
+        self.last_vert_time = time.time()
         return response
     
     def lock_axis_callback(self, request, response):
         self.axis_lock = request.data
         response.success = True
+        self.last_lock_time = time.time()
         return response
 
 
