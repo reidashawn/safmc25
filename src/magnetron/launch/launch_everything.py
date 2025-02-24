@@ -1,20 +1,21 @@
 import launch
 import launch_ros.actions
 
+import launch
+import launch_ros.actions
+import os
+from ament_index_python.packages import get_package_share_directory
+
 def generate_launch_description():
+    # Get MAVROS package share directory
+    mavros_launch_file = os.path.join(
+        get_package_share_directory('mavros'), 'launch', 'apm.launch.py'
+    )
+
     return launch.LaunchDescription([
-        # MAVROS Node for ArduPilot
-        launch_ros.actions.Node(
-            package='mavros',
-            executable='mavros_node',
-            name='mavros',
-            output='screen',
-            parameters=[{
-                'fcu_url': 'udp://:14550@',  # Adjust if needed
-                'gcs_url': '',
-                'target_system_id': 1,
-                'target_component_id': 1,
-            }]
+        # Include MAVROS APM launch file without any additional parameters
+        launch.actions.IncludeLaunchDescription(
+            launch.launch_description_sources.PythonLaunchDescriptionSource(mavros_launch_file),
         ),
 
         # Custom Nodes from Magnetron
