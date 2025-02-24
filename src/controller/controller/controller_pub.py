@@ -51,8 +51,6 @@ class ControllerPubNode(Node):
 
         # TODO: Subscribe to get state of drone for deconfliction
 
-        # TODO: Subscribe to get state of drone for deconfliction
-
         # Start a timer to update IMU data every 50ms (20 Hz)
         self.timer = self.create_timer(0.05, self.update)
 
@@ -93,6 +91,11 @@ class ControllerPubNode(Node):
                 self.pot_publisher.publish(pot_msg)
                 
                 # Create and publish Button message
+                self.but1_publisher.publish(Int32(data=but1_value))
+                self.but2_publisher.publish(Int32(data=but2_value))
+                self.but3_publisher.publish(Int32(data=but3_value))
+                self.but4_publisher.publish(Int32(data=but4_value))
+
                 self.but1_publisher.publish(Int32(data=but1_value))
                 self.but2_publisher.publish(Int32(data=but2_value))
                 self.but3_publisher.publish(Int32(data=but3_value))
