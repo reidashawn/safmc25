@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt, QRectF, QRect, QThread, pyqtSignal
 import rclpy
 from rclpy.node import Node
 
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, Float32MultiArray
 from sensor_msgs.msg import Imu
 
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
@@ -40,13 +40,13 @@ class ControllerSubscriberNode(Node):
         self.create_subscription(Int32, '/controller/right/but2', self.right_but2_callback, qos_reliable)
         self.create_subscription(Int32, '/controller/right/but3', self.right_but3_callback, qos_reliable)
         self.create_subscription(Int32, '/controller/right/but4', self.right_but4_callback, qos_reliable)
-        self.create_subscription(Int32, '/controller/pot', self.right_pot_callback, qos_reliable)
-        # self.create_subscription(Int32, '/controller/left/but1', self.left_but1_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/right/pot', self.right_pot_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/but1', self.left_but1_callback, qos_reliable)
         # self.create_subscription(Int32, '/controller/left/but2', self.left_but2_callback, qos_reliable)
         # self.create_subscription(Int32, '/controller/left/but3', self.left_but3_callback, qos_reliable)
         # self.create_subscription(Int32, '/controller/left/but4', self.left_but4_callback, qos_reliable)
-        # self.create_subscription(Int32, '/controller/left/pot', self.left_pot_callback, qos_reliable)
-        self.create_subscription(Imu, '/imu/right/euler', self.right_imu_callback, qos_reliable)
+        self.create_subscription(Int32, '/controller/left/pot', self.left_pot_callback, qos_reliable)
+        self.create_subscription(Float32MultiArray, '/imu/right/euler', self.right_imu_callback, qos_reliable)
 
         self.data = {
             "right_but1": 0,
@@ -54,33 +54,33 @@ class ControllerSubscriberNode(Node):
             "right_but3": 0,
             "right_but4": 0,
             "right_pot": 2048,
-            "right_imu": [0, 0]#,
-            # "lbut1": 0,
-            # "lbut2": 0,
-            # "lbut3": 0,
-            # "lbut4": 0,
-            # "lpot": 2048
+            "right_imu": [0, 0],
+            "left_but1": 0,
+            # "left_but2": 0,
+            # "left_but3": 0,
+            # "left_but4": 0,
+            "left_pot": 2048
         }
         self.signal = pyqtSignal(dict)
     
     def right_but1_callback(self, msg):
-        self.data["but1"] = msg.data
+        self.data["right_but1"] = msg.data
         self.signal.emit(self.data)
     
     def right_but2_callback(self, msg):
-        self.data["but2"] = msg.data
+        self.data["right_but2"] = msg.data
         self.signal.emit(self.data)
 
     def right_but3_callback(self, msg):
-        self.data["but3"] = msg.data
+        self.data["right_but3"] = msg.data
         self.signal.emit(self.data)
     
     def right_but4_callback(self, msg):
-        self.data["but4"] = msg.data
+        self.data["right_but4"] = msg.data
         self.signal.emit(self.data)
 
     def right_pot_callback(self, msg):
-        self.data["pot"] = msg.data
+        self.data["right_pot"] = msg.data
         self.signal.emit(self.data)
     
     def right_imu_callback(self, msg):
@@ -88,25 +88,25 @@ class ControllerSubscriberNode(Node):
         self.data["right_imu"][1] = msg.data[1]
         self.signal.emit(self.data)
 
-    # def left_but1_callback(self, msg):
-    #     self.data["lbut1"] = msg.data
-    #     self.signal.emit(self.data)
+    def left_but1_callback(self, msg):
+        self.data["left_but1"] = msg.data
+        self.signal.emit(self.data)
     
     # def left_but2_callback(self, msg):
-    #     self.data["lbut2"] = msg.data
+    #     self.data["left_but2"] = msg.data
     #     self.signal.emit(self.data)
 
     # def left_but3_callback(self, msg):
-    #     self.data["lbut3"] = msg.data
+    #     self.data["left_but3"] = msg.data
     #     self.signal.emit(self.data)
     
     # def left_but4_callback(self, msg):
-    #     self.data["lbut4"] = msg.data
+    #     self.data["left_but4"] = msg.data
     #     self.signal.emit(self.data)
 
-    # def left_pot_callback(self, msg):
-    #     self.data["lpot"] = msg.data
-    #     self.signal.emit(self.data)
+    def left_pot_callback(self, msg):
+        self.data["left_pot"] = msg.data
+        self.signal.emit(self.data)
 
 class RosThread(QThread):
 
@@ -124,63 +124,63 @@ class RosThread(QThread):
         rclpy.shutdown()
         self.wait()
 
-class VirtualJoystick(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setFixedSize(200, 200)
-        self.joystick_radius = 80
-        self.knob_radius = 20
-        self.center = QPointF(self.width() / 2, self.height() / 2)
-        self.knob_pos = self.center
-        self.active = False
+# class VirtualJoystick(QWidget):
+#     def __init__(self):
+#         super().__init__()
+#         self.setFixedSize(200, 200)
+#         self.joystick_radius = 80
+#         self.knob_radius = 20
+#         self.center = QPointF(self.width() / 2, self.height() / 2)
+#         self.knob_pos = self.center
+#         self.active = False
 
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+#     def paintEvent(self, event):
+#         painter = QPainter(self)
+#         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Draw joystick background
-        painter.setBrush(QBrush(Qt.lightGray))
-        painter.setPen(QPen(Qt.black, 2))
-        painter.drawEllipse(self.center, self.joystick_radius, self.joystick_radius)
+#         # Draw joystick background
+#         painter.setBrush(QBrush(Qt.lightGray))
+#         painter.setPen(QPen(Qt.black, 2))
+#         painter.drawEllipse(self.center, self.joystick_radius, self.joystick_radius)
 
-        # Draw joystick knob
-        painter.setBrush(QBrush(Qt.red))
-        painter.setPen(QPen(Qt.black, 2))
-        painter.drawEllipse(self.knob_pos, self.knob_radius, self.knob_radius)
+#         # Draw joystick knob
+#         painter.setBrush(QBrush(Qt.red))
+#         painter.setPen(QPen(Qt.black, 2))
+#         painter.drawEllipse(self.knob_pos, self.knob_radius, self.knob_radius)
 
-        painter.end()
+#         painter.end()
 
-    def mousePressEvent(self, event):
-        if (event.pos() - self.knob_pos).manhattanLength() < self.knob_radius:
-            self.active = True
+#     def mousePressEvent(self, event):
+#         if (event.pos() - self.knob_pos).manhattanLength() < self.knob_radius:
+#             self.active = True
 
-    def mouseMoveEvent(self, event):
-        if self.active:
-            delta = event.pos() - self.center
-            if delta.manhattanLength() > self.joystick_radius:
-                delta *= self.joystick_radius / delta.manhattanLength()
-            self.knob_pos = self.center + delta
-            self.update()
+#     def mouseMoveEvent(self, event):
+#         if self.active:
+#             delta = event.pos() - self.center
+#             if delta.manhattanLength() > self.joystick_radius:
+#                 delta *= self.joystick_radius / delta.manhattanLength()
+#             self.knob_pos = self.center + delta
+#             self.update()
 
-    def mouseReleaseEvent(self, event):
-        self.active = False
-        self.knob_pos = self.center
-        self.update()
+#     def mouseReleaseEvent(self, event):
+#         self.active = False
+#         self.knob_pos = self.center
+#         self.update()
 
-    def get_values(self):
-        """ Returns joystick x, y values normalized between -1 and 1 """
-        x = (self.knob_pos.x() - self.center.x()) / self.joystick_radius
-        y = -(self.knob_pos.y() - self.center.y()) / self.joystick_radius
-        return round(x, 2), round(y, 2)
+#     def get_values(self):
+#         """ Returns joystick x, y values normalized between -1 and 1 """
+#         x = (self.knob_pos.x() - self.center.x()) / self.joystick_radius
+#         y = -(self.knob_pos.y() - self.center.y()) / self.joystick_radius
+#         return round(x, 2), round(y, 2)
 
-class JoystickWindow(QMainWindow):
-    """ Separate window for the virtual joystick """
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Virtual Joystick")
-        self.setGeometry(100, 100, 250, 250)
-        self.joystick = VirtualJoystick()
-        self.setCentralWidget(self.joystick)
+# class JoystickWindow(QMainWindow):
+#     """ Separate window for the virtual joystick """
+#     def __init__(self):
+#         super().__init__()
+#         self.setWindowTitle("Virtual Joystick")
+#         self.setGeometry(100, 100, 250, 250)
+#         self.joystick = VirtualJoystick()
+#         self.setCentralWidget(self.joystick)
 
 class Button(QLabel):
     """A label that acts as an indicator, toggling between two colors when its key is pressed."""
@@ -207,7 +207,7 @@ class Button(QLabel):
         self.setStyleSheet(f"background-color: {color};")
 
 class JoystickGraph(QMainWindow):
-    def __init__(self, joystick, joystick2):
+    def __init__(self):
         super().__init__()
         self.setWindowTitle("Real-Time Graphs")
         self.setGeometry(QApplication.primaryScreen().geometry())
@@ -252,8 +252,8 @@ class JoystickGraph(QMainWindow):
         self.time_data2 = []
 
         # Store the joystick instance
-        self.joystick = joystick
-        self.joystick2 = joystick2
+        # self.joystick = joystick
+        # self.joystick2 = joystick2
 
         # YAW GRAPH
         self.yaw_plot = pg.PlotWidget(title="YAW PWM")
@@ -263,9 +263,9 @@ class JoystickGraph(QMainWindow):
         self.yaw_data = []
         
         # ALT GRAPH
-        self.z_plot = pg.PlotWidget(title="YAW PWM")
+        self.z_plot = pg.PlotWidget(title="ALT PWM")
         self.z_curve = self.z_plot.plot(pen='g')
-        self.z_plot.setYRange(-MAX_ALT_PWM, MAX_ALT_PWM)  # Fix Y-axis range
+        self.z_plot.setYRange(MIN_ALT_PWM, MAX_ALT_PWM)  # Fix Y-axis range
         self.z_plot.showGrid(x=True, y=True)
         self.z_data = []
 
@@ -404,50 +404,52 @@ class JoystickGraph(QMainWindow):
         self.holdIndicators[Qt.Key_I].update_indicator(data["right_but2"])
         self.holdIndicators[Qt.Key_O].update_indicator(data["right_but3"])
         self.holdIndicators[Qt.Key_P].update_indicator(data["right_but4"])
-        self.holdIndicators[Qt.Key_R].update_indicator(data["left_lbut1"])
-        self.holdIndicators[Qt.Key_E].update_indicator(data["left_but2"])
-        self.holdIndicators[Qt.Key_W].update_indicator(data["left_but3"])
-        self.holdIndicators[Qt.Key_Q].update_indicator(data["left_but4"])          
+        self.holdIndicators[Qt.Key_R].update_indicator(data["left_but1"])
+        # self.holdIndicators[Qt.Key_E].update_indicator(data["left_but2"])
+        # self.holdIndicators[Qt.Key_W].update_indicator(data["left_but3"])
+        # self.holdIndicators[Qt.Key_Q].update_indicator(data["left_but4"])          
 
     def updatePot(self, data):
         x_value = data["right_imu"][1]
         y_value = data["right_imu"][0]
         yaw_value = data["right_pot"]
-        z_value = data["right_pot"]
+        z_value = data["left_pot"]
         
         current_time = time.time() - self.start_time
-        self.x_data.append(x_value)
+        self.x_data.append(-x_value)
         self.y_data.append(y_value)
         self.yaw_data.append(yaw_value)
         self.z_data.append(z_value)
-        self.time_data2.append(current_time)
+        self.time_data.append(current_time)
 
         # Trim data to last `time_window` seconds
-        while self.time_data2 and (current_time - self.time_data2[0] > self.time_window):
+        while self.time_data and (current_time - self.time_data[0] > self.time_window):
             self.x_data.pop(0)
             self.y_data.pop(0)
             self.yaw_data.pop(0)
             self.z_data.pop(0)
-            self.time_data2.pop(0)
+            self.time_data.pop(0)
 
         x_trail = []
         y_trail = []
-        for i in range(len(self.time_data2)):
-            if current_time - self.time_data2[i] <= self.trail_window:
+        for i in range(len(self.time_data)):
+            if current_time - self.time_data[i] <= self.trail_window:
                 x_trail.append(self.x_data[i])
                 y_trail.append(self.y_data[i])
 
-        self.x_curve.setData(self.x_data, self.time_data2)  # Swap x and y values
+        self.x_curve.setData(self.x_data, self.time_data)  # Swap x and y values
         self.x_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
 
-        self.y_curve.setData(self.time_data2, self.y_data)
+        self.y_curve.setData(self.time_data, self.y_data)
         self.y_plot.setXRange(max(0, current_time - self.time_window), current_time)
 
-        self.yaw_curve.setData(self.yaw_data, self.time_data2)  # Swap x and y values
+        self.xy_curve.setData(x_trail, y_trail)
+
+        self.yaw_curve.setData(self.yaw_data, self.time_data)  # Swap x and y values
         self.yaw_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
 
-        self.z_curve.setData(self.z_data, self.time_data2)  # Swap x and y values
-        self.z_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
+        self.z_curve.setData(self.time_data, self.z_data)  # Swap x and y values
+        self.z_plot.X(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
 
 
     def keyPressEvent(self, event):
@@ -462,65 +464,65 @@ class JoystickGraph(QMainWindow):
         if event.key() in self.holdIndicators:
             self.holdIndicators[event.key()].update_indicator(False)  # Turn on while pressed
 
-    def update_data(self):
-        x_value, y_value = self.joystick.get_values()
-        _, z_value = self.joystick2.get_values()
-        current_time = time.time() - self.start_time
+    # def update_data(self):
+    #     x_value, y_value = self.joystick.get_values()
+    #     _, z_value = self.joystick2.get_values()
+    #     current_time = time.time() - self.start_time
 
-        self.x_data.append(x_value)
-        self.y_data.append(y_value)
-        # self.yaw_data.append(yaw_value)
-        self.z_data.append(z_value)
-        self.time_data.append(current_time)
+    #     self.x_data.append(x_value)
+    #     self.y_data.append(y_value)
+    #     # self.yaw_data.append(yaw_value)
+    #     self.z_data.append(z_value)
+    #     self.time_data.append(current_time)
 
-        # Trim data to last `time_window` seconds
-        while self.time_data and (current_time - self.time_data[0] > self.time_window):
-            self.x_data.pop(0)
-            self.y_data.pop(0)
-            # self.yaw_data.pop(0)
-            self.z_data.pop(0)
-            self.time_data.pop(0)
+    #     # Trim data to last `time_window` seconds
+    #     while self.time_data and (current_time - self.time_data[0] > self.time_window):
+    #         self.x_data.pop(0)
+    #         self.y_data.pop(0)
+    #         # self.yaw_data.pop(0)
+    #         self.z_data.pop(0)
+    #         self.time_data.pop(0)
 
-        # Trim 2D joystick trail to last `trail_window` seconds
-        x_trail = []
-        y_trail = []
-        for i in range(len(self.time_data)):
-            if current_time - self.time_data[i] <= self.trail_window:
-                x_trail.append(self.x_data[i])
-                y_trail.append(self.y_data[i])
+    #     # Trim 2D joystick trail to last `trail_window` seconds
+    #     x_trail = []
+    #     y_trail = []
+    #     for i in range(len(self.time_data)):
+    #         if current_time - self.time_data[i] <= self.trail_window:
+    #             x_trail.append(self.x_data[i])
+    #             y_trail.append(self.y_data[i])
 
-        # Update X Graph (rotated 90 degrees anticlockwise)
-        self.x_curve.setData(self.x_data, self.time_data)  # Swap x and y values
-        self.x_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
+    #     # Update X Graph (rotated 90 degrees anticlockwise)
+    #     self.x_curve.setData(self.x_data, self.time_data)  # Swap x and y values
+    #     self.x_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
 
-        # Update Y Graph
-        self.y_curve.setData(self.time_data, self.y_data)
-        self.y_plot.setXRange(max(0, current_time - self.time_window), current_time)
+    #     # Update Y Graph
+    #     self.y_curve.setData(self.time_data, self.y_data)
+    #     self.y_plot.setXRange(max(0, current_time - self.time_window), current_time)
 
-        # Update 2D Joystick Position Graph with shorter trail
-        self.xy_curve.setData(x_trail, y_trail)
+    #     # Update 2D Joystick Position Graph with shorter trail
+    #     self.xy_curve.setData(x_trail, y_trail)
 
-        # Update Yaw Graph (rotated 90 degrees anticlockwise)
-        # self.yaw_curve.setData(self.yaw_data, self.time_data)  # Swap x and y values
-        # self.yaw_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
+    #     # Update Yaw Graph (rotated 90 degrees anticlockwise)
+    #     # self.yaw_curve.setData(self.yaw_data, self.time_data)  # Swap x and y values
+    #     # self.yaw_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
 
-        # Update Z Graph
-        self.z_curve.setData(self.time_data, self.z_data)
-        self.z_plot.setXRange(max(0, current_time - self.time_window), current_time)
+    #     # Update Z Graph
+    #     self.z_curve.setData(self.time_data, self.z_data)
+    #     self.z_plot.setXRange(max(0, current_time - self.time_window), current_time)
 
 if __name__ == "__main__":
     rclpy.init()
     app = QApplication(sys.argv)
     
     # Create joystick window
-    joystick_window = JoystickWindow()
-    joystick_window.show()
+    # joystick_window = JoystickWindow()
+    # joystick_window.show()
     
-    joystick2_window = JoystickWindow()
-    joystick2_window.show()
+    # joystick2_window = JoystickWindow()
+    # joystick2_window.show()
 
     # Create graph window and pass the joystick instance
-    graph_window = JoystickGraph(joystick_window.joystick, joystick2_window.joystick)
+    graph_window = JoystickGraph()
     graph_window.show()
 
     sys.exit(app.exec_())
