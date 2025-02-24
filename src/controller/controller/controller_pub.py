@@ -4,7 +4,14 @@ from rclpy.node import Node
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Int32  # Import Int32 message type
 from controller.helpers.serial_helper import SerialHelper
-from mavros_msgs.srv import CommandBool, SetMode, CommandLong
+
+VALID_MODES = [
+    'GUIDED',
+    'LAND',
+    'STABILIZE',
+    'LOITER'
+]
+
 
 
 class ControllerPubNode(Node):
@@ -30,16 +37,6 @@ class ControllerPubNode(Node):
         # Initialize the SerialHelper with the parameters
         self.ser = SerialHelper(serial_port, baud_rate)
 
-        # Clients
-        # self.clients = {
-        #     'mode': self.create_client(SetMode, '/mavros/set_mode'),
-        #     'arm': self.create_client(CommandBool, '/mavros/cmd/arming'),
-        #     'takeoff': self.create_client(CommandLong, '/mavros/cmd/command')
-        # }
-
-        # for service_name, client in self.clients.items():
-        #     while not client.wait_for_service(timeout_sec=1.0):
-        #         self.get_logger().warn(f'Waiting for {service_name} service')
         
         # Create publishers
         self.imu_publisher = self.create_publisher(Imu, 'imu/' + self.hand + '/data', 10)
@@ -105,6 +102,7 @@ class ControllerPubNode(Node):
         except Exception as e:
             self.get_logger().error(f"Error in update: {e}")
 
+    
     
 
 
