@@ -444,6 +444,7 @@ class MainWindow(QMainWindow):
                 for i in len(self.messages):
                     j = len(self.messages) - 1 - i
                     self.messages[j].setText(self.statuses[key][j], self)
+                    print(self.statuses[key][j])
                     
     def updateButtons(self, data):
         self.buttons[Qt.Key_U].update_button(data["right_but1"])
