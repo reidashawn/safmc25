@@ -17,6 +17,8 @@ class ImuConverter(Node):
     def __init__(self):
         super().__init__('imu_converter')
 
+        self.declare_parameter('hand', 'right')  # Declare 'hand' parameter
+
     # Declare parameters with default values
         self.declare_parameter('beta', 0.2)
         self.declare_parameter('zeta', 0.3)
@@ -32,6 +34,12 @@ class ImuConverter(Node):
         self.declare_parameter('zero_imu_roll', None)
         self.declare_parameter('deadzone_imu_roll', 15)
 
+        self.hand = self.get_parameter('hand').value
+
+        # Validate 'hand' parameter
+        if self.hand not in ["right", "left"]:
+            self.get_logger().warn("Invalid 'hand' parameter! Must be 'right' or 'left'. Defaulting to 'right'.")
+            self.hand = "right"
 
         # Initialize parameters
         self.beta = self.get_parameter('beta').value
@@ -63,7 +71,7 @@ class ImuConverter(Node):
     # Subscriber to IMU data
         self.subscription = self.create_subscription(
             Imu,
-            '/imu/data',  # Topic name
+            '/imu/' + self.hand + '/data',  # Topic name
             self.imu_callback,
             10  # Queue size
         )
@@ -71,14 +79,14 @@ class ImuConverter(Node):
     # Publisher for velocity command
         self.velocity_publisher = self.create_publisher(
             Twist,
-            '/cmd_vel_hor',  # Topic name for velocity command
+            '/' + self.hand + '/cmd_vel_hor',  # Topic name for velocity command
             10  # Queue size
         )
 
     # Publisher for Euler angles
         self.euler_publisher = self.create_publisher(
             Float32MultiArray,
-            '/imu/euler',  # Topic name for Euler angles
+            '/imu/' + self.hand  + '/euler',  # Topic name for Euler angles
             10  # Queue size
         )
 
@@ -88,7 +96,7 @@ class ImuConverter(Node):
         self.get_logger().info('IMU Subscriber and Velocity Publisher node has been started.')
 
     # Service to recenter imu
-        self.center_srv = self.create_service(SetBool, "center_imu", self.center_imu)
+        self.center_srv = self.create_service(SetBool, self.hand + '/center_imu', self.center_imu)
 
 
     def parameter_callback(self, params):
