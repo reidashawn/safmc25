@@ -1,12 +1,29 @@
 from std_msgs.msg import Int32
+import time
+
 class Button:
-    def __init__(self, node, topic, press_callback=None, short_callback=None, long_callback=None):
+    def __init__(self, node, topic, long_press_time=2, press_callback=None, short_callback=None, long_callback=None):
         self.topic = topic
         self.node = node
         self.sub = self.node.create_subscription(Int32, topic, self.data_callback, 10)
         self.press_callback = press_callback
         self.short_callback = short_callback
         self.long_callback = long_callback
+        self.last_state = 0
+        self.last_time = None
+        self.long_press_time = long_press_time
     
-    def data_callback(self, ):
+    def data_callback(self, msg):
+        if msg.data == 1:
+            if self.press_callback is not None:
+                self.press_callback() 
+            if self.last_state == 0:
+                self.last_state = 1
+                self.last_time = time.time()
+                if self.short_callback is not None:
+                    self.short_callback()
+            elif (time.time() - self.last_time) > self.long_press_time and self.long_callback is not None:
+                self.long_callback()
+        else:
+            self.last_state = 0
 
