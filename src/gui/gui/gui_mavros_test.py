@@ -28,7 +28,6 @@ qos_reliable = QoSProfile(
     depth=10
 )
 
-# MAVROS IMU, Battery, and Altitude - Likely Use BEST_EFFORT QoS
 qos_best_effort = QoSProfile(
     reliability=ReliabilityPolicy.BEST_EFFORT,
     history=HistoryPolicy.KEEP_LAST,
@@ -46,25 +45,25 @@ text_colour = "#F0F1F1"
 background_colour = "#353535"
 window_colour = "#242424"
 
-# class CameraSubscriberNode(Node):
-#     def __init__(self):
-#         super().__init__('camera_subscriber')
-#         self.bridge = CvBridge()
-#         self.subscription = self.create_subscription(
-#             CompressedImage, 
-#             "/camera/camera/color/image_raw/compressed",
-#             self.camera_sub_callback, 10
-#         )
-#         self.signal = pyqtSignal(object)
+class CameraSubscriberNode(Node):
+    def __init__(self):
+        super().__init__('camera_subscriber')
+        self.bridge = CvBridge()
+        self.subscription = self.create_subscription(
+            CompressedImage, 
+            "/camera/camera/color/image_raw/compressed",
+            self.camera_sub_callback, 10
+        )
+        self.signal = pyqtSignal(object)
 
-#     def camera_sub_callback(self, msg):
-#         try:
-#             cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
-#         except Exception as e:
-#             self.get_logger().error(f"Failed to convert image {e}")
-#             return
+    def camera_sub_callback(self, msg):
+        try:
+            cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
+        except Exception as e:
+            self.get_logger().error(f"Failed to convert image {e}")
+            return
 
-#         self.signal.emit(cv_image)
+        self.signal.emit(cv_image)
 
 class MavrosSubscriberNode(Node):
     def __init__(self):
@@ -131,13 +130,13 @@ class MavrosSubscriberNode(Node):
         self.signal.emit(self.data)
 
 class RosThread(QThread):
-    # fwd_cam_received = pyqtSignal(object)
+    fwd_cam_received = pyqtSignal(object)
     telem_received = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
-        # self.cam_node = CameraSubscriberNode()
-        # self.cam_node.signal = self.fwd_cam_received
+        self.cam_node = CameraSubscriberNode()
+        self.cam_node.signal = self.fwd_cam_received
 
         self.telem_node = MavrosSubscriberNode()
         self.telem_node.signal = self.telem_received
@@ -155,12 +154,13 @@ class MainWindow(QMainWindow):
 
         super().__init__()
         self.setWindowTitle("SAFMC GUI")
+        self.setGeometry(QApplication.primaryScreen().geometry())
 
         self.ros_thread = RosThread()
 
         # Forward cam (SHAWN)
         self.label_fwd_cam, self.pic_fwd_cam = self.createCam("    Forward Cam")
-        # self.ros_thread.fwd_cam_received.connect(self.updateCam)
+        self.ros_thread.fwd_cam_received.connect(self.updateCam)
         self.updateCam_fake(self.pic_fwd_cam)
 
         # Downward cam
@@ -185,7 +185,6 @@ class MainWindow(QMainWindow):
         self.pic_drone.setPixmap(pixmap_drone.scaled(self.pic_drone.size(), aspectRatioMode=1))
         self.pic_drone.setFixedSize(info_height // 6 * 10, info_height)
         self.pic_drone.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-
 
         # Controllers
         self.label_ctrl = QLabel("    Controllers", self)
@@ -242,15 +241,6 @@ class MainWindow(QMainWindow):
         label_UAV.setStyleSheet("color: #F0F1F1;"
                                      "background-color: #242424;")
         label_UAV.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
-
-        # info_UAV = QLabel("    Armed : ARMED\n    Battery : 96%\n    Flight Mode : GUIDED\n\n    Pitch : 0.6\n    Roll : -0.3\n    Yaw : 359\n    Altitude : 1.6m\n", self)
-        # info_UAV.setGeometry(margin, 2 * margin + 2 * label_height + camera_height, info_width, info_height)
-        # info_UAV.setFont(QFont("Arial", 10))
-        # info_UAV.setFixedSize(info_width, info_height)
-        # info_UAV.setStyleSheet("color: #F0F1F1;"
-        #                        "background-color: #242424;")
-        # info_UAV.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-
 
         self.info_UAV = QVBoxLayout()
         self.labels = {
@@ -327,8 +317,8 @@ class MainWindow(QMainWindow):
         grid2.addWidget(self.label_ctrl, 0, 4)
         grid2.addWidget(self.pic_ctrl, 1, 4)
 
-        vbox.addLayout(grid2)
         vbox.addLayout(grid1)
+        vbox.addLayout(grid2)
 
         central_widget.setLayout(vbox)
         
