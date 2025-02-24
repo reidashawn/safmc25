@@ -76,8 +76,18 @@ class ButtonManagerNode(Node):
     def arm_drone(self):
         arm_req = CommandBool.Request(value=True)
         future = self.mavros_clients['arm'].call_async(arm_req)
-        rclpy.spin_until_future_complete(self, future)
-        return future.result()
+        self.get_logger().info(f"Arm drone result: {future.result()}")
+
+        # # rclpy.spin_until_future_complete(self, future)
+        # if future.exception():
+        #     print('exception raised')
+        # elif future.result() is None:
+        #     print('result returned none')
+        # else:
+        #     print(f"{future.result()}")
+
+        # self.get_logger().info(f"{future.done()}")
+        # return future.done()
 
     def takeoff(self):
         takeoff_req = CommandLong.Request(
