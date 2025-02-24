@@ -45,7 +45,10 @@ class ControllerPubNode(Node):
         # Create publishers
         self.imu_publisher = self.create_publisher(Imu, 'imu/data', 10)
         self.pot_publisher = self.create_publisher(Int32, 'controller/pot', 10)
-        self.but_publisher = self.create_publisher(Int32, 'controller/but1', 10)
+        self.but1_publisher = self.create_publisher(Int32, 'controller/but1', 10)
+        self.but2_publisher = self.create_publisher(Int32, 'controller/but2', 10)
+        self.but3_publisher = self.create_publisher(Int32, 'controller/but3', 10)
+        self.but4_publisher = self.create_publisher(Int32, 'controller/but4', 10)
 
         # TODO: Subscribe to get state of drone for deconfliction
 
@@ -60,14 +63,17 @@ class ControllerPubNode(Node):
             if line:
                 # print(line)
                 split = line.split(',')
-                if len(split) != 8:
+                if len(split) != 11:
                     return
                 
                 # Convert data to float (accelerometer and gyroscope data)
                 accel_data = list(map(float, split[:3]))  # accelx, accely, accelz
                 gyro_data = list(map(lambda x: float(x) * (3.141592653589793 / 180), split[3:6]))  # Convert to radians/sec
                 pot_value = int(split[6])  # Potentiometer value (7th number)
-                but_value = int(split[7])  # Button state (8th number)
+                but1_value = int(split[7])  # Button state (8th number)
+                but2_value = int(split[8])
+                but3_value = int(split[9])
+                but4_value = int(split[10])
 
                 # Create and populate IMU message
                 imu_msg = Imu()
@@ -85,9 +91,11 @@ class ControllerPubNode(Node):
                 self.pot_publisher.publish(pot_msg)
                 
                 # Create and publish Button message
-                but_msg = Int32()
-                but_msg.data = but_value
-                self.but_publisher.publish(but_msg)
+                self.but1_publisher.publish(Int32(data=but1_value))
+                self.but2_publisher.publish(Int32(data=but2_value))
+                self.but3_publisher.publish(Int32(data=but3_value))
+                self.but4_publisher.publish(Int32(data=but4_value))
+
 
         except Exception as e:
             self.get_logger().error(f"Error in update: {e}")
