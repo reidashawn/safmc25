@@ -326,13 +326,11 @@ class MainWindow(QMainWindow):
             "optflow": QLabel("Optflow: Unknown")
         }
 
-        for status in self.statuses:
-            status.setAlignment(Qt.AlignCenter)
-
         row, column = 0, 0
         for label in self.statuses.values():
             label.setStyleSheet("background-color: #242424;"
                                 "color: #F0F1F1;")
+            label.setAlignment(Qt.AlignCenter)
             self.layout_status.addWidget(label, row, column)
             column += 1
             if column == 3:
@@ -350,8 +348,8 @@ class MainWindow(QMainWindow):
         
         self.drone_states = {
             0: QPixmap("drone_00.jpg"),
-            1: QPixmap("drone_00.jpg"),
-            2: QPixmap("drone_00.jpg"),
+            1: QPixmap("drone_01.jpg"),
+            2: QPixmap("drone_02.jpg"),
             3: QPixmap("drone_00.jpg"),
             4: QPixmap("drone_00.jpg"),
             5: QPixmap("drone_00.jpg")
@@ -505,7 +503,14 @@ class MainWindow(QMainWindow):
         self.buttons[Qt.Key_R].update_button(data["left_but1"])
         self.buttons[Qt.Key_E].update_button(data["left_but2"])
         self.buttons[Qt.Key_W].update_button(data["left_but3"])
-        self.buttons[Qt.Key_Q].update_button(data["left_but4"])          
+        self.buttons[Qt.Key_Q].update_button(data["left_but4"])
+
+        if data["left_but3"]:
+            self.pixmap_drone = self.drone_states[1]
+        elif data["left_but4"]:
+            self.pixmap_drone = self.drone_states[1]
+
+        self.updatePixmap()
 
     def buttonUI(self):
         self.layout_buttons = QGridLayout()
