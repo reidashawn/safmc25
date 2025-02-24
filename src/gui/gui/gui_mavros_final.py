@@ -2,9 +2,9 @@ import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel,
                              QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                              QPushButton, QGraphicsRectItem, 
-                             QSpacerItem, QSizePolicy)
+                             QSpacerItem, QSizePolicy, QScrollArea)
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QPalette, QColor, QPainter, QImage
-from PyQt5.QtCore import Qt, QRectF, QRect, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QRectF, QRect, QThread, pyqtSignal, QTimer
 
 import rclpy
 from rclpy.node import Node
@@ -88,7 +88,7 @@ class MavrosSubscriberNode(Node):
             "altitude": "Unknown",
             "rangefinder": "Unknown",
             "optflow": "Unknown",
-            "error": []
+            "error": ""
         }
         self.signal = pyqtSignal(dict)
     
@@ -127,7 +127,7 @@ class MavrosSubscriberNode(Node):
         self.signal.emit(self.data)
 
     def error_callback(self, msg):
-        self.data["error"].append(msg.text)
+        self.data["error"] = msg.text
         self.signal.emit(self.data)
 
 class ControllerSubscriberNode(Node):
@@ -277,6 +277,10 @@ class MainWindow(QMainWindow):
         self.createMessages()
         self.createCamera()
 
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_messages)
+        self.timer.start(500)  # Update every 500ms
+
         # General
         self.setStyleSheet("background-color: #353535;")
 
@@ -319,8 +323,7 @@ class MainWindow(QMainWindow):
             "yaw": QLabel("Yaw: Unknown"),
             "altitude": QLabel("Altitude: Unknown"),
             "rangefinder": QLabel("Rangefinder: Unknown"),
-            "optflow": QLabel("Optflow: Unknown"),
-            "error": QLabel("Error: Unknown")
+            "optflow": QLabel("Optflow: Unknown")
         }
 
         row, column = 0, 0
@@ -413,17 +416,29 @@ class MainWindow(QMainWindow):
                                          "background-color: #242424;")
         self.label_messages.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
         
-        self.messages = []
-        for i in range(messages_max):
-            label = QLabel("")
-            label.setStyleSheet("background-color: #242424;"
-                                "color: #F0F1F1;")
-            self.messages.append(label)
+        self.message_scroll_area = QScrollArea(self)
+        self.message_scroll_area.setStyleSheet("background-color: #242424;"
+                                                "color: #F0F1F1;")
+        self.message_scroll_area.setWidgetResizable(True)
 
-        self.message_layout = QVBoxLayout()
+        self.message_container_widget = QWidget()
+        self.message_layout = QVBoxLayout(self.message_container_widget)
+        self.message_layout.setAlignment(Qt.AlignTop)
 
-        for message in self.messages:
-            self.message_layout.addWidget(message)
+        self.message_scroll_area.setWidget(self.message_container_widget)
+
+        self.messages = [""]
+        # self.displays = []
+        # for i in range(messages_max):
+        #     label = QLabel("")
+        #     label.setStyleSheet("background-color: #242424;"
+        #                         "color: #F0F1F1;")
+        #     self.displays.append(label)
+
+        # self.message_layout = QVBoxLayout()
+
+        # for message in self.displays:
+        #     self.message_layout.addWidget(message)
 
     def updateCam(self, cv_image):
         height, width, channel = cv_image.shape
@@ -438,13 +453,46 @@ class MainWindow(QMainWindow):
                 self.statuses[key].setText(f"{key.capitalize()}: {value}")
                 self.statuses[key].setStyleSheet("color: #F0F1F1;"
                                             "background-color: #242424;")
-            else:
-                while len(self.messages) >= messages_max :
-                    self.messages.pop(0)
-                for i in range(len(self.messages)):
-                    j = len(self.messages) - 1 - i
-                    self.messages[j].setText(self.statuses[key][j], self)
-                    print(self.statuses[key][j])
+
+        # self.messages.append(data["error"])
+        # while len(self.messages) >= messages_max:
+        #     self.messages.pop(0)
+        # for i in range(len(self.messages)):
+        #     j = len(self.messages) - 1
+        #     self.displays[j - i].setText(self.messages[i])
+        
+        text = data["error"]
+        
+        # Only store unique messages (avoiding duplicates)
+        if text:
+            if text != self.messages[0]:
+                self.messages.insert(0, text)  # Insert new message at the top
+            elif time.time() - last_update > 5:
+                self.messages.insert(0, text)  # Insert new message at the top
+            last_update = time.time()
+        
+            # Keep only the last 50 messages to prevent memory overflow
+            if len(self.messages) > 50:
+                self.messages.pop()
+
+    
+    def update_messages(self):
+        """ Update the GUI with the latest error messages. """
+        # Clear old widgets
+        while self.message_layout.count():
+            item = self.message_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        # Re-add messages with the newest on top
+        for msg in self.messages:
+            label = QLabel(msg)
+            label.setWordWrap(True)
+            self.message_layout.addWidget(label)
+
+        # Adjust scrolling to show the newest messages
+        self.message_scroll_area.verticalScrollBar().setValue(0)
                     
     def updateButtons(self, data):
         self.buttons[Qt.Key_U].update_button(data["right_but1"])
@@ -515,7 +563,7 @@ class MainWindow(QMainWindow):
             message_container = QVBoxLayout()
             message_container.setSpacing(0)
             message_container.addWidget(self.label_messages)
-            message_container.addLayout(self.message_layout)
+            message_container.addWidget(self.message_scroll_area)
             
             grid = QGridLayout()
             grid.setSpacing(5)
