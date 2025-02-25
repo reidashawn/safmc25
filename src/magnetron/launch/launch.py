@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     # Get MAVROS package share directory
     mavros_launch_file = os.path.join(
-        get_package_share_directory('mavros'), 'launch', 'apm.launch.py'
+        get_package_share_directory('mavros'), 'launch', 'apm.launch'
     )
 
     return launch.LaunchDescription([
