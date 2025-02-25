@@ -32,6 +32,7 @@ class DroneMovement(Node):
         
     def publish_vel(self):
         if not self.drone_state:
+            self.get_logger().info("Drone not activated")
             return
         msg = Twist()
         msg.linear.x = float(self.linear_x)
