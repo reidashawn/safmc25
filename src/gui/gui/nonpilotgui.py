@@ -56,9 +56,9 @@ class ControllerSubscriberNode(Node):
             "right_pot": 2048,
             "right_imu": [0, 0],
             "left_but1": 0,
-            # "left_but2": 0,
-            # "left_but3": 0,
-            # "left_but4": 0,
+            "left_but2": 0,
+            "left_but3": 0,
+            "left_but4": 0,
             "left_pot": 2048
         }
         self.signal = pyqtSignal(dict)
@@ -327,22 +327,7 @@ class JoystickGraph(QMainWindow):
         layout = QGridLayout()
         self.main_widget.setLayout(layout)
 
-        # horizontal_graphs = QVBoxLayout()
-        # horizontal_graphs.addWidget(self.x_plot, alignment=Qt.AlignCenter)
-        # horizontal_graphs.addWidget(self.yaw_plot, alignment=Qt.AlignCenter)
-        # vertical_graphs = QHBoxLayout()
-        # vertical_graphs.addWidget(self.y_plot, alignment=Qt.AlignCenter)
-        # vertical_graphs.addWidget(self.z_plot, alignment=Qt.AlignCenter)
-
-        # horizontal_graphs.setStretchFactor(self.x_plot, 1)
-        # horizontal_graphs.setStretchFactor(self.yaw_plot, 1)
-        # vertical_graphs.setStretchFactor(self.y_plot, 1)
-        # vertical_graphs.setStretchFactor(self.z_plot, 1)
-
         layout.addWidget(self.xy_plot, 0, 0)
-        
-        # layout.addLayout(horizontal_graphs, 1, 0)
-        # layout.addLayout(vertical_graphs, 0, 1)
 
         layout.addWidget(self.x_plot, 1, 0)
         layout.addWidget(self.y_plot, 0, 1)

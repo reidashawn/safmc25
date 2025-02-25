@@ -151,9 +151,9 @@ class ControllerSubscriberNode(Node):
             "right_pot": 2048,
             "right_imu": [0, 0],
             "left_but1": 0,
-            # "left_but2": 0,
-            # "left_but3": 0,
-            # "left_but4": 0,
+            "left_but2": 0,
+            "left_but3": 0,
+            "left_but4": 0,
             "left_pot": 2048
         }
         self.signal = pyqtSignal(dict)
@@ -267,7 +267,7 @@ class MainWindow(QMainWindow):
         self.createButtons()
         self.createMessages()
         self.createCamera()
-        
+
         # General
         self.setStyleSheet("background-color: #353535;")
 
