@@ -4,6 +4,7 @@ from std_msgs.msg import Int32
 from mavros_msgs.srv import CommandBool, SetMode, CommandLong
 from mavros_msgs.msg import State
 from geometry_msgs.msg import Twist, Vector3
+from std_srvs.srv import SetBool
 from controller.helpers.button import Button
 from time import sleep
 from interfaces.srv import ToggleStepper, SetFloat
@@ -54,8 +55,8 @@ class ButtonManagerNode(Node):
         if self.hand == 'right':
             self.button1 = Button(topic='controller/right/but1', short_callback=self.guided_arm_takeoff)
             self.button2 = Button(topic='controller/right/but2', short_callback=self.land_callback)
-            self.button3 = Button(topic='controller/right/but3', short_callback=self.takeoff_callback)
-            self.button4 = Button(topic='controller/right/but4', short_callback=self.land_callback)
+            self.button3 = Button(topic='controller/right/but3', short_callback=self.recenter)
+            self.button4 = Button(topic='controller/right/but4', short_callback=self.lock_axis, release_callback=self.unlock_axis)
             
             self.get_logger().info('Right hand initialized')
 
@@ -89,7 +90,8 @@ class ButtonManagerNode(Node):
             'arm': self.create_client(CommandBool, '/mavros/cmd/arming'),
             'takeoff': self.create_client(CommandLong, '/mavros/cmd/command'),
             'bag': self.create_client(ToggleStepper, '/rotate_stepper'),
-            'move_vert': self.create_client(SetFloat, '/vert_vel')
+            'move_vert': self.create_client(SetFloat, '/vert_vel'),
+            'lock_axis': self.create_client(SetBool, '/lock_axis')
         }
 
         for service_name, client in self.mavros_clients.items():
@@ -98,7 +100,12 @@ class ButtonManagerNode(Node):
 
         self.get_logger().info('All services online')
 
-        self.centering_clients = 
+        self.centering_clients = {
+            'pot_right': self.create_client(SetBool, '/right/center_pot'),
+            'pot_left': self.create_client(SetBool, '/left/center_pot'),
+            'imu_right': self.create_client(SetBool, '/right/center_imu'),
+            'imu_left': self.create_client(SetBool, '/left/center_imu')
+        }
 
     def state_callback(self, msg):
         self.drone_arm = msg.armed
@@ -219,7 +226,22 @@ class ButtonManagerNode(Node):
         future = self.mavros_clients['takeoff'].call_async(takeoff_req)
         self.get_logger().info(f"Takeoff command result: {future.result()}")
 
-    def
+    def recenter(self):
+        request = SetBool.Request()
+        request.data = True
+        self.get_logger().info(f"Recentering")
+        for service_name, client in self.centering_clients.items():
+            client.call_async(request)
+
+    def lock_axis(self):
+        request = SetBool.Request()
+        request.data = True
+        self.mavros_clients['lock_axis'].call_async(request)
+    
+    def unlock_axis(self):
+        request = SetBool.Request()
+        request.data = False
+        self.mavros_clients['lock_axis'].call_async(request)
 
     
 
