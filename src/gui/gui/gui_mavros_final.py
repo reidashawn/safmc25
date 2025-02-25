@@ -227,31 +227,51 @@ class Button(QLabel):
         color = self.color_on if is_on else self.color_off
         self.setStyleSheet(f"background-color: {color};")
 
-class RosThread(QThread):
+class RosThread_Cam(QThread):
     fwd_cam_received = pyqtSignal(object)
-    telem_received = pyqtSignal(dict)
-    controller_received = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
         self.cam_node = CameraSubscriberNode()
         self.cam_node.signal = self.fwd_cam_received
 
+    def run(self):
+        rclpy.spin(self.cam_node)
+
+    def stop(self):
+        rclpy.shutdown()
+        self.wait()
+
+class RosThread_Telem(QThread):
+    telem_received = pyqtSignal(dict)
+
+    def __init__(self):
+        super().__init__()
         self.telem_node = MavrosSubscriberNode()
         self.telem_node.signal = self.telem_received
 
+    def run(self):
+        rclpy.spin(self.telem_node)
+
+    def stop(self):
+        rclpy.shutdown()
+        self.wait()
+
+class RosThread_Controller(QThread):
+    controller_received = pyqtSignal(dict)
+
+    def __init__(self):
+        super().__init__()
         self.controller_node = ControllerSubscriberNode()
         self.controller_node.signal = self.controller_received
 
     def run(self):
         rclpy.spin(self.controller_node)
-        rclpy.spin(self.telem_node)
-        rclpy.spin(self.cam_node)
-
 
     def stop(self):
         rclpy.shutdown()
         self.wait()
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -260,7 +280,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("SAFMC GUI")
         self.setGeometry(QApplication.primaryScreen().geometry())
 
-        self.ros_thread = RosThread()
+        self.ros_thread_cam = RosThread_Cam()
+        self.ros_thread_telem = RosThread_Telem()
+        self.ros_thread_controller = RosThread_Controller()
 
         self.createStatus()
         self.createOverview()
@@ -272,7 +294,10 @@ class MainWindow(QMainWindow):
         self.setStyleSheet("background-color: #353535;")
 
         # start background ROS thread
-        self.ros_thread.start()
+        self.ros_thread_cam.start()
+        self.ros_thread_telem.start()
+        self.ros_thread_controller.start()
+
         self.initUI()
     
     def createCamera(self):
