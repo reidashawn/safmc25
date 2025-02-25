@@ -21,12 +21,14 @@ class DroneMovement(Node):
         # self.vert_vel_sub = self.create_subscription(Float32, '/left/cmd_vel_vert', self.vert_vel_callback, 10)
         self.vert_srv = self.create_service(SetFloat, '/vert_vel', self.vert_vel_srv_callback)
         self.lock_srv = self.create_service(SetBool, '/lock_axis', self.lock_axis_callback)
+        self.lock_srv = self.create_service(SetBool, '/landing', self.landing_callback)
         self.linear_x = 0
         self.linear_y = 0
         self.linear_z = 0
         self.angular_z = 0
         self.axis_lock = False
         self.drone_state = False
+        self.drone_landing = False
 
     def publish_vel(self):
         msg = Twist()
@@ -35,7 +37,7 @@ class DroneMovement(Node):
         msg.linear.z = float(self.linear_z)
         msg.angular.z = float(self.angular_z)
         self.debug_pub.publish(msg)
-        if not self.drone_state:
+        if not self.drone_state or self.drone_landing:
             self.get_logger().info("Drone not activated")
             return
         
@@ -44,8 +46,15 @@ class DroneMovement(Node):
     def state_callback(self, msg):
         if msg.system_status != 4:
             self.drone_state = False
+            self.drone_landing = False
         else:
             self.drone_state = True
+    
+    def landing_callback(self, request):
+        self.drone_landing = request.data
+        response = SetBool.Response()
+        response.success = True
+        return response
 
     def hor_vel_callback(self, data):
         if self.axis_lock:

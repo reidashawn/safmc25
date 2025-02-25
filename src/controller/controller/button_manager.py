@@ -91,7 +91,8 @@ class ButtonManagerNode(Node):
             'takeoff': self.create_client(CommandLong, '/mavros/cmd/command'),
             'bag': self.create_client(ToggleStepper, '/rotate_stepper'),
             'move_vert': self.create_client(SetFloat, '/vert_vel'),
-            'lock_axis': self.create_client(SetBool, '/lock_axis')
+            'lock_axis': self.create_client(SetBool, '/lock_axis'),
+            'landing': self.create_client(SetBool, '/landing')
         }
 
         for service_name, client in self.mavros_clients.items():
@@ -122,6 +123,9 @@ class ButtonManagerNode(Node):
             
     def land_callback(self):
         self._change_mode('LAND')
+        request = SetBool.Request()
+        request.data = True
+        self.mavros_clients['landing'].call_async(request)
     
     def set_guided_callback(self):
         self.get_logger().info("PRESSED")
