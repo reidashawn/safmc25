@@ -41,9 +41,12 @@ class ButtonManagerNode(Node):
     
         self.hand = self.get_parameter('hand').get_parameter_value().string_value
 
+        print(self.hand)
+
         if self.hand not in ['right', 'left']:
             self.get_logger().error("Invalid hand parameter passed")
             return
+        self.state_subscriber = self.create_subscription(State, '/mavros/state', self.state_callback, 10)
         
         if self.hand == 'right':
             self.button1 = Button(topic='controller/right/but1', short_callback=self.set_guided_callback)
@@ -53,26 +56,30 @@ class ButtonManagerNode(Node):
             
             self.get_logger().info('Right hand initialized')
 
+            # RIGHT CONTROLLER BUTTONS
+            self.but1_subscriber = self.create_subscription(Int32, 'controller/right/but1', self.button1.data_callback, 10)
+            self.but2_subscriber = self.create_subscription(Int32, 'controller/right/but2', self.button2.data_callback, 10)
+            self.but3_subscriber = self.create_subscription(Int32, 'controller/right/but3', self.button3.data_callback, 10)
+            self.but4_subscriber = self.create_subscription(Int32, 'controller/right/but4', self.button4.data_callback, 10)
+
         else:
-            self.button1 = Button(topic='controller/left/but1', press_callback=self.vertical_up_movement_callback)
-            self.button2 = Button(topic='controller/left/but2', press_callback=self.vertical_down_movement_callback)
+            self.button1 = Button(topic='controller/left/but1', press_callback=self.vertical_up_movement_callback,release_callback=self.vertical_zero_movement_callback)
+            self.button2 = Button(topic='controller/left/but2', press_callback=self.vertical_down_movement_callback, release_callback=self.vertical_zero_movement_callback)
             self.button3 = Button(topic='controller/left/but3', short_callback=self.bag_in_callback)
             self.button4 = Button(topic='controller/left/but4', short_callback=self.bag_out_callback)
+
+            # LEFT CONTROLLER BUTTONS
+            self.but1_subscriber = self.create_subscription(Int32, 'controller/left/but1', self.button1.data_callback, 10)
+            self.but2_subscriber = self.create_subscription(Int32, 'controller/left/but2', self.button2.data_callback, 10)
+            self.but3_subscriber = self.create_subscription(Int32, 'controller/left/but3', self.button3.data_callback, 10)
+            self.but4_subscriber = self.create_subscription(Int32, 'controller/left/but4', self.button4.data_callback, 10)
 
             self.get_logger().info('Left hand initialized')
 
 
-        # RIGHT CONTROLLER BUTTONS
-        self.but1_subscriber = self.create_subscription(Int32, 'controller/right/but1', self.button1.data_callback, 10)
-        self.but2_subscriber = self.create_subscription(Int32, 'controller/right/but2', self.button2.data_callback, 10)
-        self.but3_subscriber = self.create_subscription(Int32, 'controller/right/but3', self.button3.data_callback, 10)
-        self.but4_subscriber = self.create_subscription(Int32, 'controller/right/but4', self.button4.data_callback, 10)
+        
 
-        # LEFT CONTROLLER BUTTONS
-        self.but1_subscriber = self.create_subscription(Int32, 'controller/light/but1', self.button1.data_callback, 10)
-        self.but2_subscriber = self.create_subscription(Int32, 'controller/light/but2', self.button2.data_callback, 10)
-        self.but3_subscriber = self.create_subscription(Int32, 'controller/light/but3', self.button3.data_callback, 10)
-        self.but4_subscriber = self.create_subscription(Int32, 'controller/light/but4', self.button4.data_callback, 10)
+        
     
         self.mavros_clients = {
             'mode': self.create_client(SetMode, '/mavros/set_mode'),
@@ -114,6 +121,12 @@ class ButtonManagerNode(Node):
         future = self.mavros_clients['move_vert'].call_async(float_data_req)
         self.get_logger().info("Positive vertical movement")
     
+    def vertical_zero_movement_callback(self):        
+        float_data_req = SetFloat.Request()
+        float_data_req.data = float(0)
+        future = self.mavros_clients['move_vert'].call_async(float_data_req)
+        self.get_logger().info("Zero vertical movement")
+    
     def vertical_down_movement_callback(self):        
         float_data_req = SetFloat.Request()
         float_data_req.data = -MAX_VELOCITY
@@ -125,6 +138,7 @@ class ButtonManagerNode(Node):
         bag_in_req = ToggleStepper.Request()
         bag_in_req.stepper_id = 1
         bag_in_req.speed = float(1)
+        self.get_logger().info("sending bag in")
         future = self.mavros_clients['bag'].call_async(bag_in_req)
         try:
             self.get_logger().info(f"bag_in result: {future.result()}")
