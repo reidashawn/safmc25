@@ -494,48 +494,6 @@ class MainWindow(QMainWindow):
         self.buttons[Qt.Key_W].update_button(data["left_but3"])
         self.buttons[Qt.Key_Q].update_button(data["left_but4"])          
 
-    def updatePot(self, data):
-        x_value = data["right_imu"][1]
-        y_value = data["right_imu"][0]
-        yaw_value = data["right_pot"]
-        z_value = data["left_pot"]
-        
-        current_time = time.time() - self.start_time
-        self.x_data.append(-x_value)
-        self.y_data.append(y_value)
-        self.yaw_data.append(yaw_value)
-        self.z_data.append(z_value)
-        self.time_data.append(current_time)
-
-        # Trim data to last `time_window` seconds
-        while self.time_data and (current_time - self.time_data[0] > self.time_window):
-            self.x_data.pop(0)
-            self.y_data.pop(0)
-            self.yaw_data.pop(0)
-            self.z_data.pop(0)
-            self.time_data.pop(0)
-
-        x_trail = []
-        y_trail = []
-        for i in range(len(self.time_data)):
-            if current_time - self.time_data[i] <= self.trail_window:
-                x_trail.append(self.x_data[i])
-                y_trail.append(self.y_data[i])
-
-        self.x_curve.setData(self.x_data, self.time_data)  # Swap x and y values
-        self.x_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
-
-        self.y_curve.setData(self.time_data, self.y_data)
-        self.y_plot.setXRange(max(0, current_time - self.time_window), current_time)
-
-        self.xy_curve.setData(x_trail, y_trail)
-
-        self.yaw_curve.setData(self.yaw_data, self.time_data)  # Swap x and y values
-        self.yaw_plot.setYRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
-
-        self.z_curve.setData(self.time_data, self.z_data)  # Swap x and y values
-        self.z_plot.setXRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
-
     def buttonUI(self):
         self.layout_buttons = QGridLayout()
         self.layout_buttons.setSpacing(5)
