@@ -389,7 +389,13 @@ class MainWindow(QMainWindow):
                                          "background-color: #242424;")
         self.label_messages.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
         
-        self.messages = [QLabel("", self), QLabel("", self), QLabel("", self), QLabel("", self), QLabel("", self)]
+        self.messages = []
+        for i in range(5):
+            label = QLabel("", self)
+            label.setStyleSheet("background-color: #242424;"
+                                "color: #F0F1F1;")
+            self.messages[].append(label)
+
         self.message_layout = QVBoxLayout()
 
         for message in self.messages:
