@@ -43,6 +43,8 @@ text_colour = "#F0F1F1"
 background_colour = "#353535"
 window_colour = "#242424"
 
+messages_max = 8
+
 # class CameraSubscriberNode(Node):
 #     def __init__(self):
 #         super().__init__('camera_subscriber')
@@ -279,7 +281,7 @@ class MainWindow(QMainWindow):
         self.label_fwd_cam.setFixedHeight(label_height)
         self.label_fwd_cam.setStyleSheet("color: #F0F1F1;"
                                          "background-color: #242424;")
-        self.label_fwd_cam.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        self.label_fwd_cam.setAlignment(Qt.AlignLeft)
         
         self.pic_fwd_cam = QLabel(self)
         self.pic_fwd_cam.setStyleSheet("background-color: #242424")
@@ -294,7 +296,7 @@ class MainWindow(QMainWindow):
         self.label_status.setFixedHeight(label_height)
         self.label_status.setStyleSheet("color: #F0F1F1;"
                                         "background-color: #242424;")
-        self.label_status.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        self.label_status.setAlignment(Qt.AlignLeft)
 
         self.layout_status = QGridLayout()
         self.statuses = {
@@ -327,7 +329,7 @@ class MainWindow(QMainWindow):
         self.label_overview.setFixedHeight(label_height)
         self.label_overview.setStyleSheet("color: #F0F1F1;"
                                          "background-color: #242424;")
-        self.label_overview.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        self.label_overview.setAlignment(Qt.AlignLeft)
         
         self.pic_drone = QLabel(self)
         self.pic_drone.setStyleSheet("background-color: #242424")
@@ -387,10 +389,10 @@ class MainWindow(QMainWindow):
         self.label_messages.setFixedHeight(label_height)
         self.label_messages.setStyleSheet("color: #F0F1F1;"
                                          "background-color: #242424;")
-        self.label_messages.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        self.label_messages.setAlignment(Qt.AlignLeft)
         
         self.messages = []
-        for i in range(5):
+        for i in range(messages_max):
             label = QLabel("", self)
             label.setStyleSheet("background-color: #242424;"
                                 "color: #F0F1F1;")
@@ -417,7 +419,7 @@ class MainWindow(QMainWindow):
                 self.statuses[key].setStyleSheet("color: #F0F1F1;"
                                             "background-color: #242424;")
             else:
-                while len(self.statuses[key]) >= 5 :
+                while len(self.statuses[key]) >= messages_max :
                     self.statuses[key].pop(0)
                 for i in len(self.statuses[key]):
                     j = len(self.statuses[key])- 1- i
