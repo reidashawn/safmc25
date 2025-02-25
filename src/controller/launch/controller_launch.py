@@ -1,9 +1,10 @@
 import launch
 import launch_ros.actions
-from launch.substitutions import LaunchConfiguration
-from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration, TextSubstitution
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 
 def generate_launch_description():
+    # ✅ Declare launch arguments correctly
     serial_port_arg = DeclareLaunchArgument(
         'serial_port',
         default_value='/dev/ttyUSB0',
@@ -19,19 +20,19 @@ def generate_launch_description():
     hand_arg = DeclareLaunchArgument(
         'hand',
         default_value='right',
-        description='which hand the controller is on'
+        description='Which hand the controller is on'
     )
 
-    return launch.LaunchDescription(
+    return launch.LaunchDescription([
         serial_port_arg,
         baud_rate_arg,
         hand_arg,
-        
-        # Controller Publisher Node
+
+        # ✅ Controller Publisher Node
         launch_ros.actions.Node(
             package='controller',
             executable='controller_pub',
-            name='controller_pub'+ LaunchConfiguration('hand'),
+            name=TextSubstitution(text='controller_pub_'), # + LaunchConfiguration('hand'),  # ✅ Correct concatenation
             parameters=[{
                 'serial_port': LaunchConfiguration('serial_port'),
                 'baud_rate': LaunchConfiguration('baud_rate'),
@@ -40,25 +41,25 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # IMU Converter Node
+        # ✅ IMU Converter Node
         launch_ros.actions.Node(
             package='controller',
             executable='imu_converter',
-            name='imu_converter_' + LaunchConfiguration('hand'),
+            name=TextSubstitution(text='imu_converter_'), # + LaunchConfiguration('hand'),  # ✅ Correct concatenation
             parameters=[{
                 'hand': LaunchConfiguration('hand')
             }],
             output='screen'
         ),
 
-        # Potentiometer Converter Node
+        # ✅ Potentiometer Converter Node
         launch_ros.actions.Node(
             package='controller',
             executable='pot_converter',
-            name= 'pot_converter_' + LaunchConfiguration('hand'),
+            name=TextSubstitution(text='pot_converter_'),# + LaunchConfiguration('hand'),  # ✅ Correct concatenation
             parameters=[{
                 'hand': LaunchConfiguration('hand')
             }],
             output='screen'
         )
-    )
+    ])
