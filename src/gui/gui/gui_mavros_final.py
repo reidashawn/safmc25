@@ -229,57 +229,27 @@ class Button(QLabel):
         color = self.color_on if is_on else self.color_off
         self.setStyleSheet(f"background-color: {color};")
 
-class RosThread_Cam(QThread):
+class RosThread(QThread):
     fwd_cam_received = pyqtSignal(object)
-
-    def __init__(self):
-        super().__init__()
-        self.cam_node = CameraSubscriberNode()
-        self.cam_node.signal = self.fwd_cam_received
-        self.executor = rclpy.executors.MultiThreadedExecutor()
-        self.executor.add_node(self.cam_node)
-        self.running = True
-
-    def run(self):
-        while self.running and rclpy.ok():
-            self.executor.spin_once(timeout_sec=0.1)
-
-    def stop(self):
-        self.running = False
-        self.executor.shutdown()
-        rclpy.shutdown()
-        self.wait()
-
-class RosThread_Telem(QThread):
     telem_received = pyqtSignal(dict)
-
-    def __init__(self):
-        super().__init__()
-        self.telem_node = MavrosSubscriberNode()
-        self.telem_node.signal = self.telem_received
-        self.executor = rclpy.executors.MultiThreadedExecutor()
-        self.executor.add_node(self.telem_node)
-        self.running = True
-
-    def run(self):
-        while self.running and rclpy.ok():
-            self.executor.spin_once(timeout_sec=0.1)
-
-    def stop(self):
-        self.running = False
-        self.executor.shutdown()
-        rclpy.shutdown()
-        self.wait()
-
-class RosThread_Controller(QThread):
     controller_received = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
+        self.executor = rclpy.executors.MultiThreadedExecutor()
+
+        self.cam_node = CameraSubscriberNode()
+        self.cam_node.signal = self.fwd_cam_received
+        self.executor.add_node(self.cam_node)
+
+        self.telem_node = MavrosSubscriberNode()
+        self.telem_node.signal = self.telem_received
+        self.executor.add_node(self.telem_node)
+
         self.controller_node = ControllerSubscriberNode()
         self.controller_node.signal = self.controller_received
-        self.executor = rclpy.executors.MultiThreadedExecutor()
         self.executor.add_node(self.controller_node)
+
         self.running = True
 
     def run(self):
@@ -291,7 +261,6 @@ class RosThread_Controller(QThread):
         self.executor.shutdown()
         rclpy.shutdown()
         self.wait()
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -300,9 +269,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("SAFMC GUI")
         self.setGeometry(QApplication.primaryScreen().geometry())
 
-        self.ros_thread_cam = RosThread_Cam()
-        self.ros_thread_telem = RosThread_Telem()
-        self.ros_thread_controller = RosThread_Controller()
+        self.ros_thread = RosThread()
 
         self.createStatus()
         self.createOverview()
@@ -314,9 +281,7 @@ class MainWindow(QMainWindow):
         self.setStyleSheet("background-color: #353535;")
 
         # start background ROS thread
-        self.ros_thread_cam.start()
-        self.ros_thread_telem.start()
-        self.ros_thread_controller.start()
+        self.ros_thread.start()
 
         self.initUI()
     
@@ -333,7 +298,7 @@ class MainWindow(QMainWindow):
         self.pic_fwd_cam.setAlignment(Qt.AlignCenter)
         self.pic_fwd_cam.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.pixmap_cam = QPixmap("dwd_cam_fake.jpg")
-        self.ros_thread_cam.fwd_cam_received.connect(self.updateCam)
+        self.ros_thread.fwd_cam_received.connect(self.updateCam)
 
     def createStatus(self):
 
@@ -368,7 +333,7 @@ class MainWindow(QMainWindow):
                 row += 1
                 column = 0
 
-        self.ros_thread_telem.telem_received.connect(self.updateStatus)
+        self.ros_thread.telem_received.connect(self.updateStatus)
 
     def createOverview(self):
         self.label_overview = QLabel("    Overview", self)
@@ -438,7 +403,7 @@ class MainWindow(QMainWindow):
             Qt.Key_P: Button(Qt.Key_P, "#F0F1F1", "#464646", self),
         }
 
-        self.ros_thread_controller.controller_received.connect(self.updateButtons)
+        self.ros_thread.controller_received.connect(self.updateButtons)
 
     def createMessages(self):
 
@@ -588,9 +553,7 @@ class MainWindow(QMainWindow):
         self.updatePixmap()
 
     def closeEvent(self, event):
-        self.ros_thread_cam.stop()
-        self.ros_thread_telem.stop()
-        self.ros_thread_controller.stop()
+        self.ros_thread.stop()
         event.accept()
 
 def main():
