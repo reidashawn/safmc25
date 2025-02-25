@@ -84,7 +84,7 @@ class MavrosSubscriberNode(Node):
             "altitude": "Unknown",
             "rangefinder": "Unknown",
             "optflow": "Unknown",
-            "error": "Unknown"
+            "error": []
         }
         self.signal = pyqtSignal(dict)
     
@@ -123,8 +123,7 @@ class MavrosSubscriberNode(Node):
         self.signal.emit(self.data)
 
     def error_callback(self, msg):
-        print(msg)
-        self.data["error"] = msg.text
+        self.data["error"].append(msg.text)
         self.signal.emit(self.data)
 
 class ControllerSubscriberNode(Node):
@@ -214,14 +213,14 @@ class Button(QLabel):
         self.color_off = color_off  # Color when "off"
 
         self.setFixedSize(50, 50)  # Set indicator size
-        self.update_indicator(False)
+        self.update_button(False)
 
     def toggle(self):
         """Toggles the indicator color."""
         self.trigger = not self.trigger
-        self.update_indicator(self.trigger)
+        self.update_button(self.trigger)
 
-    def update_indicator(self, is_on):
+    def update_button(self, is_on):
         """Updates the indicator based on whether the key is pressed."""
         color = self.color_on if is_on else self.color_off
         self.setStyleSheet(f"background-color: {color};")
@@ -261,7 +260,21 @@ class MainWindow(QMainWindow):
 
         self.ros_thread = RosThread()
 
-        # Forward cam (SHAWN)
+        self.createCamera()
+        self.createStatus()
+        self.createOverview()
+        self.createButtons()
+        self.createMessages()
+
+        # General
+        self.setStyleSheet("background-color: #353535;")
+
+        # start background ROS thread
+        self.ros_thread.start()
+        self.initUI()
+    
+    def createCamera(self):
+
         self.label_fwd_cam = QLabel("    Camera", self)
         self.label_fwd_cam.setFixedHeight(label_height)
         self.label_fwd_cam.setStyleSheet("color: #F0F1F1;"
@@ -275,11 +288,41 @@ class MainWindow(QMainWindow):
         self.pixmap_cam = QPixmap("dwd_cam_fake.jpg")
         # self.ros_thread.fwd_cam_received.connect(self.updateCam)
 
-        # UAV Info
-        self.label_UAV, self.info_UAV = self.createUAVInfo()
-        self.ros_thread.telem_received.connect(self.updateUAVInfo)
+    def createStatus(self):
 
-        # Overview
+        self.label_status = QLabel("    Status", self)
+        self.label_status.setFixedHeight(label_height)
+        self.label_status.setStyleSheet("color: #F0F1F1;"
+                                        "background-color: #242424;")
+        self.label_status.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+
+        self.layout_status = QGridLayout()
+        self.statuses = {
+            "armed": QLabel("Armed: Unknown"),
+            "mode": QLabel("Mode: Unknown"),
+            "battery": QLabel("Battery: Unknown"),
+            "roll": QLabel("Roll: Unknown"),
+            "pitch": QLabel("Pitch: Unknown"),
+            "yaw": QLabel("Yaw: Unknown"),
+            "altitude": QLabel("Altitude: Unknown"),
+            "rangefinder": QLabel("Rangefinder: Unknown"),
+            "optflow": QLabel("Optflow: Unknown"),
+            "error": QLabel("Error: Unknown")
+        }
+
+        row, column = 0, 0
+        for label in self.statuses.values():
+            label.setStyleSheet("background-color: #242424;"
+                                "color: #F0F1F1;")
+            self.layout_status.addWidget(label, row, column)
+            column += 1
+            if column == 3:
+                row += 1
+                column = 0
+
+        self.ros_thread.telem_received.connect(self.updateStatus)
+
+    def createOverview(self):
         self.label_overview = QLabel("    Overview", self)
         self.label_overview.setFixedHeight(label_height)
         self.label_overview.setStyleSheet("color: #F0F1F1;"
@@ -292,20 +335,20 @@ class MainWindow(QMainWindow):
         self.pic_drone.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.pixmap_drone = QPixmap("drone_00.jpg")
 
-        # Buttons
-        self.L1_label = QLabel("Toggle Axis", self)
+    def createButtons(self):
+        self.L1_label = QLabel("Increase Alt", self)
         self.L1_label.setAlignment(Qt.AlignCenter)
-        self.L2_label = QLabel("Toggle Camera", self)
+        self.L2_label = QLabel("Decrease Alt", self)
         self.L2_label.setAlignment(Qt.AlignCenter)
-        self.L3_label = QLabel("L3", self)
+        self.L3_label = QLabel("Receive L Payload", self)
         self.L3_label.setAlignment(Qt.AlignCenter)
-        self.L4_label = QLabel("Takeoff / Land", self)
+        self.L4_label = QLabel("Dropoff L Payload", self)
         self.L4_label.setAlignment(Qt.AlignCenter)
-        self.R1_label = QLabel("Toggle L/R Screw", self)
+        self.R1_label = QLabel("Arm", self)
         self.R1_label.setAlignment(Qt.AlignCenter)
-        self.R2_label = QLabel("Receive Payload", self)
+        self.R2_label = QLabel("Takeoff", self)
         self.R2_label.setAlignment(Qt.AlignCenter)
-        self.R3_label = QLabel("Dropoff Payload", self)
+        self.R3_label = QLabel("Land", self)
         self.R3_label.setAlignment(Qt.AlignCenter)
         self.R4_label = QLabel("Set Zero", self)
         self.R4_label.setAlignment(Qt.AlignCenter)
@@ -327,7 +370,7 @@ class MainWindow(QMainWindow):
         self.R4_label.setStyleSheet("color: #F0F1F1;"
                                "background-color: #242424;")
 
-        self.holdIndicators = {
+        self.buttons = {
             Qt.Key_Q: Button(Qt.Key_Q, "#F0F1F1", "#464646", self),
             Qt.Key_W: Button(Qt.Key_W, "#F0F1F1", "#464646", self),
             Qt.Key_E: Button(Qt.Key_E, "#F0F1F1", "#464646", self),
@@ -337,46 +380,22 @@ class MainWindow(QMainWindow):
             Qt.Key_O: Button(Qt.Key_O, "#F0F1F1", "#464646", self),
             Qt.Key_P: Button(Qt.Key_P, "#F0F1F1", "#464646", self),
         }
-        self.ros_thread.controller_received.connect(self.updateController)
 
-        # General
-        self.setStyleSheet("background-color: #353535;")
+    def createMessages(self):
 
-        # start background ROS thread
-        self.ros_thread.start()
-        self.initUI()
-    
-    def createUAVInfo(self):
-        label_UAV = QLabel("    Status", self)
-        label_UAV.setFixedHeight(label_height)
-        label_UAV.setStyleSheet("color: #F0F1F1;"
-                                "background-color: #242424;")
-        label_UAV.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
-
-        self.info_UAV = QGridLayout()
-        self.labels = {
-            "armed": QLabel("Armed: Unknown"),
-            "mode": QLabel("Mode: Unknown"),
-            "battery": QLabel("Battery: Unknown"),
-            "roll": QLabel("Roll: Unknown"),
-            "pitch": QLabel("Pitch: Unknown"),
-            "yaw": QLabel("Yaw: Unknown"),
-            "altitude": QLabel("Altitude: Unknown"),
-            "rangefinder": QLabel("Rangefinder: Unknown"),
-            "optflow": QLabel("Optflow: Unknown"),
-            "error": QLabel("Error: Unknown")
-        }
-        row, column = 0, 0
-        for label in self.labels.values():
-            label.setStyleSheet("background-color: #242424;"
-                                "color: #F0F1F1;")
-            self.info_UAV.addWidget(label, row, column)
-            column += 1
-            if column == 3:
-                row += 1
-                column = 0
+        self.label_messages = QLabel("    Messages", self)
+        self.label_messages.setFixedHeight(label_height)
+        self.label_messages.setStyleSheet("color: #F0F1F1;"
+                                         "background-color: #242424;")
+        self.label_messages.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
         
-        return label_UAV, self.info_UAV
+        self.messages = [QLabel("", self), QLabel("", self), QLabel("", self), QLabel("", self), QLabel("", self)]
+        self.message_layout = QVBoxLayout()
+
+        for message in self.messages:
+            self.message_layout.addWidget(message)
+
+        self.ros_thread.controller_received.connect(self.updateController)
 
     def updateCam(self, cv_image):  # (SHAWN)
         height, width, channel = cv_image.shape
@@ -385,25 +404,32 @@ class MainWindow(QMainWindow):
         self.pixmap_cam = QPixmap.fromImage(q_image)
         self.pic_fwd_cam.setPixmap(self.pixmap_cam)
 
-    def updateUAVInfo(self, data):
+    def updateStatus(self, data):
         for key, value in data.items():
-            self.labels[key].setText(f"{key.capitalize()}: {value}")
-            self.labels[key].setStyleSheet("color: #F0F1F1;"
-                                           "background-color: #242424;")
-
+            if key != "error":
+                self.statuses[key].setText(f"{key.capitalize()}: {value}")
+                self.statuses[key].setStyleSheet("color: #F0F1F1;"
+                                            "background-color: #242424;")
+            else:
+                while len(self.statuses[key]) >= 5 :
+                    self.statuses[key].pop(0)
+                for i in len(self.statuses[key]):
+                    j = len(self.statuses[key])- 1- i
+                    self.messages[j].setTest(self.statuses[key][j], self)
+                    
     def updateController(self, data):
         self.updateButtons(data)
         self.updatePot(data)
 
     def updateButtons(self, data):
-        self.holdIndicators[Qt.Key_U].update_indicator(data["right_but1"])
-        self.holdIndicators[Qt.Key_I].update_indicator(data["right_but2"])
-        self.holdIndicators[Qt.Key_O].update_indicator(data["right_but3"])
-        self.holdIndicators[Qt.Key_P].update_indicator(data["right_but4"])
-        self.holdIndicators[Qt.Key_R].update_indicator(data["left_but1"])
-        self.holdIndicators[Qt.Key_E].update_indicator(data["left_but2"])
-        self.holdIndicators[Qt.Key_W].update_indicator(data["left_but3"])
-        self.holdIndicators[Qt.Key_Q].update_indicator(data["left_but4"])          
+        self.buttons[Qt.Key_U].update_button(data["right_but1"])
+        self.buttons[Qt.Key_I].update_button(data["right_but2"])
+        self.buttons[Qt.Key_O].update_button(data["right_but3"])
+        self.buttons[Qt.Key_P].update_button(data["right_but4"])
+        self.buttons[Qt.Key_R].update_button(data["left_but1"])
+        self.buttons[Qt.Key_E].update_button(data["left_but2"])
+        self.buttons[Qt.Key_W].update_button(data["left_but3"])
+        self.buttons[Qt.Key_Q].update_button(data["left_but4"])          
 
     def updatePot(self, data):
         x_value = data["right_imu"][1]
@@ -448,38 +474,38 @@ class MainWindow(QMainWindow):
         self.z_plot.setXRange(max(0, current_time - self.time_window), current_time)  # Set the time as the Y-axis range
 
     def buttonUI(self):
-        self.buttons = QGridLayout()
-        self.buttons.setSpacing(5)
+        self.layout_buttons = QGridLayout()
+        self.layout_buttons.setSpacing(5)
 
-        self.buttons.addWidget(self.L1_label, 0, 0)
-        self.buttons.addWidget(self.L2_label, 1, 0)
-        self.buttons.addWidget(self.L3_label, 2, 0)
-        self.buttons.addWidget(self.L4_label, 3, 0)
+        self.layout_buttons.addWidget(self.L1_label, 0, 0)
+        self.layout_buttons.addWidget(self.L2_label, 1, 0)
+        self.layout_buttons.addWidget(self.L3_label, 2, 0)
+        self.layout_buttons.addWidget(self.L4_label, 3, 0)
 
-        self.buttons.addWidget(self.holdIndicators[Qt.Key_R], 0, 1)
-        self.buttons.addWidget(self.holdIndicators[Qt.Key_E], 1, 1)
-        self.buttons.addWidget(self.holdIndicators[Qt.Key_W], 2, 1)
-        self.buttons.addWidget(self.holdIndicators[Qt.Key_Q], 3, 1)
+        self.layout_buttons.addWidget(self.buttons[Qt.Key_R], 0, 1)
+        self.layout_buttons.addWidget(self.buttons[Qt.Key_E], 1, 1)
+        self.layout_buttons.addWidget(self.buttons[Qt.Key_W], 2, 1)
+        self.layout_buttons.addWidget(self.buttons[Qt.Key_Q], 3, 1)
 
-        self.buttons.addWidget(self.holdIndicators[Qt.Key_U], 0, 2)
-        self.buttons.addWidget(self.holdIndicators[Qt.Key_I], 1, 2)
-        self.buttons.addWidget(self.holdIndicators[Qt.Key_O], 2, 2)
-        self.buttons.addWidget(self.holdIndicators[Qt.Key_P], 3, 2)
+        self.layout_buttons.addWidget(self.buttons[Qt.Key_U], 0, 2)
+        self.layout_buttons.addWidget(self.buttons[Qt.Key_I], 1, 2)
+        self.layout_buttons.addWidget(self.buttons[Qt.Key_O], 2, 2)
+        self.layout_buttons.addWidget(self.buttons[Qt.Key_P], 3, 2)
 
-        self.buttons.addWidget(self.R1_label, 0, 3)
-        self.buttons.addWidget(self.R2_label, 1, 3)
-        self.buttons.addWidget(self.R3_label, 2, 3)
-        self.buttons.addWidget(self.R4_label, 3, 3)
+        self.layout_buttons.addWidget(self.R1_label, 0, 3)
+        self.layout_buttons.addWidget(self.R2_label, 1, 3)
+        self.layout_buttons.addWidget(self.R3_label, 2, 3)
+        self.layout_buttons.addWidget(self.R4_label, 3, 3)
 
-        self.buttons.setRowStretch(0, 1)
-        self.buttons.setRowStretch(1, 1)
-        self.buttons.setRowStretch(2, 1)
-        self.buttons.setRowStretch(3, 1)
+        self.layout_buttons.setRowStretch(0, 1)
+        self.layout_buttons.setRowStretch(1, 1)
+        self.layout_buttons.setRowStretch(2, 1)
+        self.layout_buttons.setRowStretch(3, 1)
 
-        self.buttons.setColumnStretch(0, 1)
-        self.buttons.setColumnStretch(1, 2)
-        self.buttons.setColumnStretch(2, 2)
-        self.buttons.setColumnStretch(3, 1)
+        self.layout_buttons.setColumnStretch(0, 1)
+        self.layout_buttons.setColumnStretch(1, 2)
+        self.layout_buttons.setColumnStretch(2, 2)
+        self.layout_buttons.setColumnStretch(3, 1)
 
     def initUI(self):
             self.buttonUI()
@@ -496,19 +522,25 @@ class MainWindow(QMainWindow):
             overview_container.setSpacing(0)
             overview_container.addWidget(self.label_overview)
             overview_container.addWidget(self.pic_drone)
-            overview_container.addLayout(self.buttons)
+            overview_container.addLayout(self.layout_buttons)
 
             status_container = QVBoxLayout()
             status_container.setSpacing(0)
-            status_container.addWidget(self.label_UAV)
+            status_container.addWidget(self.label_status)
             status_container.addWidget(self.pic_fwd_cam)
 
+            message_container = QVBoxLayout()
+            message_container.setSpacing(0)
+            message_container.addWidget(self.label_messages)
+            message_container.addWidget(self.message_layout)
+            
             grid = QGridLayout()
             grid.setSpacing(5)
 
             grid.addLayout(camera_container, 0, 0)
             grid.addLayout(overview_container, 0, 1)
-            grid.addLayout(self.info_UAV, 1, 0)
+            grid.addLayout(self.layout_status, 1, 0)
+            grid.addLayout(message_container, 1, 1)
 
             grid.setRowStretch(0, 3)
             grid.setRowStretch(1, 1)
