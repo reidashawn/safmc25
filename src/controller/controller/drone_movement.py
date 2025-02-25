@@ -3,6 +3,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32
 from std_srvs.srv import SetBool
+from mavros_msgs.msg import State
 from interfaces.srv import SetFloat
 import time
 import threading
@@ -15,6 +16,7 @@ class DroneMovement(Node):
         self.pub = self.create_publisher(Twist, '/mavros/setpoint_velocity/cmd_vel_unstamped', 10)
         self.hor_vel_sub = self.create_subscription(Twist, '/right/cmd_vel_hor', self.hor_vel_callback, 10)
         self.yaw_vel_sub = self.create_subscription(Float32, '/right/cmd_vel_vert', self.yaw_vel_callback, 10)
+        self.state_sub = self.create_subscription(State, '/mavros/state', self.state_callback, 10)
         # self.vert_vel_sub = self.create_subscription(Float32, '/left/cmd_vel_vert', self.vert_vel_callback, 10)
         self.vert_srv = self.create_service(SetFloat, '/vert_vel', self.vert_vel_srv_callback)
         self.last_vert_time = time.time()
@@ -25,9 +27,12 @@ class DroneMovement(Node):
         self.linear_z = 0
         self.angular_z = 0
         self.axis_lock = False
+        self.drone_state = False
         self.thread = threading.Thread(target=self.thread_callback, daemon=True)  # Daemon thread to toggle PWM
         
     def publish_vel(self):
+        if not self.drone_state:
+            return
         msg = Twist()
         msg.linear.x = float(self.linear_x)
         msg.linear.y = float(self.linear_y)
@@ -35,7 +40,11 @@ class DroneMovement(Node):
         msg.angular.z = float(self.angular_z)
         self.pub.publish(msg)
         return
-    
+    def state_callback(self, msg):
+        if msg.system_status != 4:
+            self.drone_state = False
+        else:
+            self.drone_state = True
     def thread_callback(self):
         if time.time() - self.last_lock_time > .5:
             self.axis_lock = False
