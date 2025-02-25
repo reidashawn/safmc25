@@ -63,10 +63,16 @@ class ButtonManagerNode(Node):
 
 
         # RIGHT CONTROLLER BUTTONS
-        self.but1_subscriber = self.create_subscription(Int32, 'controller/but1', self.button1.data_callback, 10)
-        self.but2_subscriber = self.create_subscription(Int32, 'controller/but2', self.button2.data_callback, 10)
-        self.but3_subscriber = self.create_subscription(Int32, 'controller/but3', self.button3.data_callback, 10)
-        self.but4_subscriber = self.create_subscription(Int32, 'controller/but4', self.button4.data_callback, 10)
+        self.but1_subscriber = self.create_subscription(Int32, 'controller/right/but1', self.button1.data_callback, 10)
+        self.but2_subscriber = self.create_subscription(Int32, 'controller/right/but2', self.button2.data_callback, 10)
+        self.but3_subscriber = self.create_subscription(Int32, 'controller/right/but3', self.button3.data_callback, 10)
+        self.but4_subscriber = self.create_subscription(Int32, 'controller/right/but4', self.button4.data_callback, 10)
+
+        # LEFT CONTROLLER BUTTONS
+        self.but1_subscriber = self.create_subscription(Int32, 'controller/light/but1', self.button1.data_callback, 10)
+        self.but2_subscriber = self.create_subscription(Int32, 'controller/light/but2', self.button2.data_callback, 10)
+        self.but3_subscriber = self.create_subscription(Int32, 'controller/light/but3', self.button3.data_callback, 10)
+        self.but4_subscriber = self.create_subscription(Int32, 'controller/light/but4', self.button4.data_callback, 10)
     
         self.mavros_clients = {
             'mode': self.create_client(SetMode, '/mavros/set_mode'),
@@ -90,6 +96,7 @@ class ButtonManagerNode(Node):
         self._change_mode('LAND')
     
     def set_guided_callback(self):
+        self.get_logger().info("PRESSED")
         self._change_mode('GUIDED')
 
     def is_armed_callback(self, msg: State):
@@ -136,6 +143,7 @@ class ButtonManagerNode(Node):
 
     def _change_mode(self, mode: str):
         mode_upper = mode.upper()
+        self.get_logger().info("{mode}, {mode_upper}")
         if mode_upper not in VALID_MODES:
             self.get_logger().error(f"{mode.upper()} is not a valid mode")
             return

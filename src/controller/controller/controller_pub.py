@@ -42,9 +42,10 @@ class ControllerPubNode(Node):
         self.imu_publisher = self.create_publisher(Imu, 'imu/' + self.hand + '/data', 10)
         self.pot_publisher = self.create_publisher(Int32, 'controller/' + self.hand + '/pot', 10)
         self.but1_publisher = self.create_publisher(Int32, 'controller/' + self.hand + '/but1', 10)
-        self.but2_publisher = self.create_publisher(Int32, 'controller/but2', 10)
-        self.but3_publisher = self.create_publisher(Int32, 'controller/but3', 10)
-        self.but4_publisher = self.create_publisher(Int32, 'controller/but4', 10)
+        self.but2_publisher = self.create_publisher(Int32, 'controller/' + self.hand + '/but2', 10)
+        self.but3_publisher = self.create_publisher(Int32, 'controller/' + self.hand + '/but3', 10)
+        self.but4_publisher = self.create_publisher(Int32, 'controller/' + self.hand + '/but4', 10)
+        
 
         # TODO: Subscribe to get state of drone for deconfliction
 
