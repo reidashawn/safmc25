@@ -188,16 +188,16 @@ class ImuConverter(Node):
         
         forward_output = self.pitch_joystick.get_output(pitch)
         side_output = self.roll_joystick.get_output(roll)
+        forward_output = self.pitch_joystick.get_output(pitch)
+        side_output = self.roll_joystick.get_output(roll)
 
-        # cast as as Python's float object as some instances appear as a numpy.float64
-        forward_vel = float(forward_output * MAX_VELOCITY)
-        side_vel = float(side_output * MAX_VELOCITY)
+        forward_vel = forward_output * MAX_VELOCITY
+        side_vel = side_output * MAX_VELOCITY
 
         velocity_linear = Vector3(x=forward_vel, y=side_vel, z=0.0)
         velocity_angular = Vector3()
         velocity_msg = Twist(linear=velocity_linear, angular=velocity_angular)
-        self.get_logger().info(f"forward_vel type: {type(forward_vel)}")
-        self.get_logger().info(f"side_vel type: {type(side_vel)}")
+
         # Publish velocity command
         self.velocity_publisher.publish(velocity_msg)
 
