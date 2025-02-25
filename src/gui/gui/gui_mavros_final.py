@@ -309,8 +309,7 @@ class MainWindow(QMainWindow):
             "yaw": QLabel("Yaw: Unknown"),
             "altitude": QLabel("Altitude: Unknown"),
             "rangefinder": QLabel("Rangefinder: Unknown"),
-            "optflow": QLabel("Optflow: Unknown"),
-            "error": QLabel("Error: Unknown")
+            "optflow": QLabel("Optflow: Unknown")
         }
 
         row, column = 0, 0
