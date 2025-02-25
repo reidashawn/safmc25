@@ -429,11 +429,11 @@ class MainWindow(QMainWindow):
                 self.statuses[key].setStyleSheet("color: #F0F1F1;"
                                             "background-color: #242424;")
             else:
-                while len(self.statuses[key]) >= messages_max :
-                    self.statuses[key].pop(0)
-                for i in len(self.statuses[key]):
-                    j = len(self.statuses[key])- 1- i
-                    self.messages[j].setTest(self.statuses[key][j], self)
+                while len(self.messages) >= messages_max :
+                    self.messages.pop(0)
+                for i in len(self.messages):
+                    j = len(self.messages) - 1 - i
+                    self.messages[j].setTest(self.messages[j], self)
                     
     def updateController(self, data):
         self.updateButtons(data)
