@@ -5,8 +5,6 @@ from sensor_msgs.msg import Imu
 from std_msgs.msg import Int32  # Import Int32 message type
 from controller.helpers.serial_helper import SerialHelper
 
-<<<<<<< HEAD
-=======
 VALID_MODES = [
     'GUIDED',
     'LAND',
@@ -15,7 +13,6 @@ VALID_MODES = [
 ]
 
 
->>>>>>> a97e1eb (feat: adds functions to arm and change mode, to takeoff)
 
 class ControllerPubNode(Node):
     def __init__(self):
