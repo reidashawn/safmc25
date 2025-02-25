@@ -47,6 +47,8 @@ class ButtonManagerNode(Node):
             self.get_logger().error("Invalid hand parameter passed")
             return
         self.state_subscriber = self.create_subscription(State, '/mavros/state', self.state_callback, 10)
+        self.drone_state = False
+        self.drone_arm = True
         
         if self.hand == 'right':
             self.button1 = Button(topic='controller/right/but1', short_callback=self.set_guided_callback)
@@ -94,6 +96,9 @@ class ButtonManagerNode(Node):
                 self.get_logger().warn(f'Waiting for {service_name} service')
 
         self.get_logger().info('All services online')
+
+    def state_callback(self, msg):
+        pass
 
     def arm_takeoff_callback(self):
         self.get_logger().info("arm and takeoff")
