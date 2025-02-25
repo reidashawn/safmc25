@@ -94,6 +94,16 @@ def generate_launch_description():
             output='screen'
         ),
 
+        launch_ros.actions.Node(
+            package='controller',
+            executable='button_manager',
+            name='button_manager_right',
+            parameters=[{
+                'hand': 'right'
+            }],
+            output='screen'
+        ),
+
                 # ✅ Controller Publisher Node
         launch_ros.actions.Node(
             package='controller',
@@ -123,6 +133,16 @@ def generate_launch_description():
             package='controller',
             executable='pot_converter',
             name='pot_converter_left',
+            parameters=[{
+                'hand': 'left'
+            }],
+            output='screen'
+        ),
+
+        launch_ros.actions.Node(
+            package='controller',
+            executable='button_manager',
+            name='button_manager_left',
             parameters=[{
                 'hand': 'left'
             }],
