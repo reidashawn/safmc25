@@ -44,7 +44,7 @@ class PotConverter(Node):
 
         # Subscribe to pot topic
         self.pub = self.create_publisher(Float32, self.hand + '/cmd_vel_vert', 10)
-        self.subscription = self.create_subscription(Int32, self.hand +  'controller/pot', self.pot_callback, 10)
+        self.subscription = self.create_subscription(Int32, 'controller/'+ self.hand +  '/pot', self.pot_callback, 10)
         
 
         # Load calibration data from the same directory as the script

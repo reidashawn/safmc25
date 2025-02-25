@@ -25,7 +25,7 @@ class ControllerPubNode(Node):
         if self.hand not in ["right", "left"]:
             self.get_logger().warn("Invalid 'hand' parameter! Must be 'right' or 'left'. Defaulting to 'right'.")
             self.hand = "right"
-
+        print("hello")
         # Initialize the SerialHelper with the parameters
         self.ser = SerialHelper(serial_port, baud_rate)
         
@@ -41,10 +41,11 @@ class ControllerPubNode(Node):
         try:
             # Read and process serial data
             line = self.ser.read_from_serial()
+            print(line)
             if line:
                 # print(line)
                 split = line.split(',')
-                if len(split) != 8:
+                if len(split) != 11:
                     return
                 
                 # Convert data to float (accelerometer and gyroscope data)
