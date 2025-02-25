@@ -281,7 +281,7 @@ class MainWindow(QMainWindow):
         self.label_fwd_cam.setFixedHeight(label_height)
         self.label_fwd_cam.setStyleSheet("color: #F0F1F1;"
                                          "background-color: #242424;")
-        self.label_fwd_cam.setAlignment(Qt.AlignLeft | Qt.AlignMiddle)
+        self.label_fwd_cam.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
         
         self.pic_fwd_cam = QLabel(self)
         self.pic_fwd_cam.setStyleSheet("background-color: #242424")
@@ -296,7 +296,7 @@ class MainWindow(QMainWindow):
         self.label_status.setFixedHeight(label_height)
         self.label_status.setStyleSheet("color: #F0F1F1;"
                                         "background-color: #242424;")
-        self.label_status.setAlignment(Qt.AlignLeft | Qt.AlignMiddle)
+        self.label_status.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
 
         self.layout_status = QGridLayout()
         self.layout_status.setSpacing(0)
@@ -330,7 +330,7 @@ class MainWindow(QMainWindow):
         self.label_overview.setFixedHeight(label_height)
         self.label_overview.setStyleSheet("color: #F0F1F1;"
                                          "background-color: #242424;")
-        self.label_overview.setAlignment(Qt.AlignLeft | Qt.AlignMiddle)
+        self.label_overview.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
         
         self.drone_states = {
             0: QPixmap("drone_00.jpg"),
@@ -399,7 +399,7 @@ class MainWindow(QMainWindow):
         self.label_messages.setFixedHeight(label_height)
         self.label_messages.setStyleSheet("color: #F0F1F1;"
                                          "background-color: #242424;")
-        self.label_messages.setAlignment(Qt.AlignLeft | Qt.AlignMiddle)
+        self.label_messages.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
         
         self.messages = []
         for i in range(messages_max):
