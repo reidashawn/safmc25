@@ -394,7 +394,7 @@ class MainWindow(QMainWindow):
             label = QLabel("", self)
             label.setStyleSheet("background-color: #242424;"
                                 "color: #F0F1F1;")
-            self.messages[].append(label)
+            self.messages.append(label)
 
         self.message_layout = QVBoxLayout()
 
