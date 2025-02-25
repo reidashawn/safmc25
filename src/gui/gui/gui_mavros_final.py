@@ -438,7 +438,7 @@ class MainWindow(QMainWindow):
             Qt.Key_P: Button(Qt.Key_P, "#F0F1F1", "#464646", self),
         }
 
-        self.ros_thread_controller.controller_received.connect(self.updateController)
+        self.ros_thread_controller.controller_received.connect(self.updateButtons)
 
     def createMessages(self):
 
@@ -480,10 +480,6 @@ class MainWindow(QMainWindow):
             #         j = len(self.messages) - 1 - i
             #         self.messages[j].setTest(self.messages[j], self)
                     
-    def updateController(self, data):
-        self.updateButtons(data)
-        self.updatePot(data)
-
     def updateButtons(self, data):
         self.buttons[Qt.Key_U].update_button(data["right_but1"])
         self.buttons[Qt.Key_I].update_button(data["right_but2"])
