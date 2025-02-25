@@ -35,8 +35,14 @@ def check_and_launch_drone_movement(context, *args, **kwargs):
 
 def generate_launch_description():
     # ✅ Declare launch arguments correctly
-    serial_port_arg = DeclareLaunchArgument(
-        'serial_port',
+    serial_port_right_arg = DeclareLaunchArgument(
+        'serial_port_right',
+        default_value='/dev/ttyUSB1',
+        description='Serial port for the controller'
+    )
+    
+    serial_port_left_arg = DeclareLaunchArgument(
+        'serial_port_left',
         default_value='/dev/ttyUSB0',
         description='Serial port for the controller'
     )
@@ -47,26 +53,21 @@ def generate_launch_description():
         description='Baud rate for serial communication'
     )
 
-    hand_arg = DeclareLaunchArgument(
-        'hand',
-        default_value='right',
-        description='Which hand the controller is on'
-    )
 
     return launch.LaunchDescription([
-        serial_port_arg,
+        serial_port_right_arg,
+        serial_port_left_arg,
         baud_rate_arg,
-        hand_arg,
 
         # ✅ Controller Publisher Node
         launch_ros.actions.Node(
             package='controller',
             executable='controller_pub',
-            name='controller_pub_',
+            name='controller_pub_right',
             parameters=[{
-                'serial_port': LaunchConfiguration('serial_port'),
+                'serial_port': LaunchConfiguration('serial_port_right'),
                 'baud_rate': LaunchConfiguration('baud_rate'),
-                'hand': LaunchConfiguration('hand')
+                'hand': 'right'
             }],
             output='screen'
         ),
@@ -75,9 +76,9 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='controller',
             executable='imu_converter',
-            name='imu_converter_',
+            name='imu_converter_right',
             parameters=[{
-                'hand': LaunchConfiguration('hand')
+                'hand': 'right'
             }],
             output='screen'
         ),
@@ -86,9 +87,44 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='controller',
             executable='pot_converter',
-            name='pot_converter_',
+            name='pot_converter_right',
             parameters=[{
-                'hand': LaunchConfiguration('hand')
+                'hand': 'right'
+            }],
+            output='screen'
+        ),
+
+                # ✅ Controller Publisher Node
+        launch_ros.actions.Node(
+            package='controller',
+            executable='controller_pub',
+            name='controller_pub_left',
+            parameters=[{
+                'serial_port': LaunchConfiguration('serial_port_left'),
+                'baud_rate': LaunchConfiguration('baud_rate'),
+                'hand': 'left'
+            }],
+            output='screen'
+        ),
+
+        # ✅ IMU Converter Node
+        launch_ros.actions.Node(
+            package='controller',
+            executable='imu_converter',
+            name='imu_converter_left',
+            parameters=[{
+                'hand': 'left'
+            }],
+            output='screen'
+        ),
+
+        # ✅ Potentiometer Converter Node
+        launch_ros.actions.Node(
+            package='controller',
+            executable='pot_converter',
+            name='pot_converter_left',
+            parameters=[{
+                'hand': 'left'
             }],
             output='screen'
         ),
