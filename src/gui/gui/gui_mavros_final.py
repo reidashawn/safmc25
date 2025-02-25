@@ -43,7 +43,7 @@ text_colour = "#F0F1F1"
 background_colour = "#353535"
 window_colour = "#242424"
 
-messages_max = 8
+messages_max = 6
 
 # class CameraSubscriberNode(Node):
 #     def __init__(self):
@@ -331,11 +331,20 @@ class MainWindow(QMainWindow):
                                          "background-color: #242424;")
         self.label_overview.setAlignment(Qt.AlignLeft)
         
+        self.drone_states = {
+            0: QPixmap("drone_00.jpg"),
+            1: QPixmap("drone_00.jpg"),
+            2: QPixmap("drone_00.jpg"),
+            3: QPixmap("drone_00.jpg"),
+            4: QPixmap("drone_00.jpg"),
+            5: QPixmap("drone_00.jpg"),
+        }
+
         self.pic_drone = QLabel(self)
         self.pic_drone.setStyleSheet("background-color: #242424")
         self.pic_drone.setAlignment(Qt.AlignCenter)
         self.pic_drone.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.pixmap_drone = QPixmap("drone_00.jpg")
+        self.pixmap_drone = self.drone_states[0]
 
     def createButtons(self):
         self.L1_label = QLabel("Increase Alt", self)
@@ -557,9 +566,6 @@ class MainWindow(QMainWindow):
 
             central_widget.setLayout(grid)
 
-    def resizeEvent(self, event):
-        self.updatePixmap()
-    
     def updatePixmap(self):
         """Scale the image to fit within its QLabel while maintaining aspect ratio."""
         if not self.pixmap_cam.isNull():
@@ -577,6 +583,9 @@ class MainWindow(QMainWindow):
                 Qt.SmoothTransformation
             )
             self.pic_drone.setPixmap(scaled_pixmap_drone)
+
+    def resizeEvent(self, event):
+        self.updatePixmap()
 
     def closeEvent(self, event):
         self.ros_thread.stop()
