@@ -25,7 +25,7 @@ class ControllerPubNode(Node):
         if self.hand not in ["right", "left"]:
             self.get_logger().warn("Invalid 'hand' parameter! Must be 'right' or 'left'. Defaulting to 'right'.")
             self.hand = "right"
-
+        print("hello")
         # Initialize the SerialHelper with the parameters
         self.ser = SerialHelper(serial_port, baud_rate)
 

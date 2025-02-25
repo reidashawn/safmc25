@@ -30,7 +30,6 @@ setup(
             'imu_converter = controller.imu_converter:main',
             'pot_converter = controller.pot_converter:main',
             'button_manager = controller.button_manager:main'
-            'pot_converter = controller.pot_converter:main'
             'drone_movement = controller.drone_movement:main'   # Adjust the node entry point accordingly
         ],
     },

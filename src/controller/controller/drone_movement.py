@@ -1,6 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msd import Twist
+from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32
 from std_srvs.srv import SetBool
 from interfaces.srv import SetFloat
@@ -29,11 +29,11 @@ class DroneMovement(Node):
         
     def publish_vel(self):
         msg = Twist()
-        msg.linear.x = self.linear_x
-        msg.linear.y = self.linear_y
-        msg.linear.z = self.linear_z
-        msg.angular.z = self.angular_z
-        self.pub.publish_message(msg)
+        msg.linear.x = float(self.linear_x)
+        msg.linear.y = float(self.linear_y)
+        msg.linear.z = float(self.linear_z)
+        msg.angular.z = float(self.angular_z)
+        self.pub.publish(msg)
         return
     
     def thread_callback(self):
@@ -66,7 +66,7 @@ class DroneMovement(Node):
         self.publish_vel()
 
     def vert_vel_srv_callback(self, request, response):
-        self.linear_z = request.float 
+        self.linear_z = request.data
         response.success = True
         self.publish_vel()
         self.last_vert_time = time.time()
