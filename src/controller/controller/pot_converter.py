@@ -55,7 +55,7 @@ class PotConverter(Node):
         # Add parameter callback
         self.add_on_set_parameters_callback(self.param_callback)
 
-        self.center_srv = self.create_service(SetBool, "center_pot", self.center_pot)
+        self.center_srv = self.create_service(SetBool, self.hand + "/center_pot", self.center_pot)
 
     def load_calibration(self):
         calibration_data = {}

@@ -49,10 +49,11 @@ class ButtonManagerNode(Node):
         self.state_subscriber = self.create_subscription(State, '/mavros/state', self.state_callback, 10)
         self.drone_state = False
         self.drone_arm = True
+        self.drone_mode = None
         
         if self.hand == 'right':
-            self.button1 = Button(topic='controller/right/but1', short_callback=self.set_guided_callback)
-            self.button2 = Button(topic='controller/right/but2', short_callback=self.arm_callback)
+            self.button1 = Button(topic='controller/right/but1', short_callback=self.guided_arm_takeoff)
+            self.button2 = Button(topic='controller/right/but2', short_callback=self.land_callback)
             self.button3 = Button(topic='controller/right/but3', short_callback=self.takeoff_callback)
             self.button4 = Button(topic='controller/right/but4', short_callback=self.land_callback)
             
@@ -97,7 +98,15 @@ class ButtonManagerNode(Node):
 
         self.get_logger().info('All services online')
 
+        self.centering_clients = 
+
     def state_callback(self, msg):
+        self.drone_arm = msg.armed
+        self.drone_mode = msg.mode
+        if msg.system_status == 4:
+            self.drone_state = True
+        else:
+            self.drone_state = False
         pass
 
     def arm_takeoff_callback(self):
@@ -111,8 +120,16 @@ class ButtonManagerNode(Node):
         self.get_logger().info("PRESSED")
         self._change_mode('GUIDED')
 
-    def is_armed_callback(self, msg: State):
-        self.is_armed = msg.armed
+    def guided_arm_takeoff(self):
+        if self.drone_mode != 'GUIDED':
+            self._change_mode('GUIDED')
+            self.get_logger().info("Setting mode to guided")
+        elif not self.drone_arm:
+            self.arm_drone()
+            self.get_logger().info("Arming Drone")
+        elif not self.drone_state:
+            self.takeoff()
+            self.get_logger().info("Taking off")
 
     def arm_callback(self):
         self.arm_drone()
@@ -201,6 +218,8 @@ class ButtonManagerNode(Node):
             )
         future = self.mavros_clients['takeoff'].call_async(takeoff_req)
         self.get_logger().info(f"Takeoff command result: {future.result()}")
+
+    def
 
     
 
