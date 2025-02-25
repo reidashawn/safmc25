@@ -269,7 +269,7 @@ class MainWindow(QMainWindow):
         label_UAV.setGeometry(margin, 2 * margin + label_height + camera_height, info_width, label_height)
         label_UAV.setFixedSize(info_width, label_height)
         label_UAV.setStyleSheet("color: #F0F1F1;"
-                                     "background-color: #242424;")
+                                "background-color: #242424;")
         label_UAV.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
 
         self.info_UAV = QVBoxLayout()
@@ -287,6 +287,8 @@ class MainWindow(QMainWindow):
         }
         row, column = 0, 0
         for label in self.labels.values():
+            label.setStyleSheet("background-color: #242424;"
+                                "color: #F0F1F1;")
             self.info_UAV.addWidget(label, row, column)
             column += 1
             if column == 3:
@@ -301,10 +303,6 @@ class MainWindow(QMainWindow):
         q_image = QImage(cv_image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
         self.pixmap_cam = QPixmap.fromImage(q_image)
         self.pic_fwd_cam.setPixmap(self.pixmap_cam)
-
-    def updateCam_fake(self, pic_cam):
-        pixmap_cam = QPixmap("dwd_cam_fake.jpg")        
-        pic_cam.setPixmap(pixmap_cam.scaled(pic_cam.size(), aspectRatioMode=1))
 
     def updateUAVInfo(self, data):
         for key, value in data.items():
@@ -356,7 +354,28 @@ class MainWindow(QMainWindow):
         vbox.addLayout(grid2)
 
         central_widget.setLayout(vbox)
-        
+
+    def resizeEvent(self, event):
+        self.updatePixmap()
+    
+    def updatePixmap(self):
+        """Scale the image to fit within its QLabel while maintaining aspect ratio."""
+        if not self.pixmap_cam.isNull():
+            scaled_pixmap_cam = self.pixmap_cam.scaled(
+                self.pic_fwd_cam.size(), 
+                Qt.KeepAspectRatio, 
+                Qt.SmoothTransformation
+            )
+            self.pic_fwd_cam.setPixmap(scaled_pixmap_cam)
+        if not self.pixmap_drone.isNull():
+            self.pic_drone.setAutoFillBackground
+            scaled_pixmap_drone = self.pixmap_drone.scaled(
+                min(self.pic_drone.width(),self.pic_drone.height()), min(self.pic_drone.width(),self.pic_drone.height()), 
+                Qt.KeepAspectRatio, 
+                Qt.SmoothTransformation
+            )
+            self.pic_drone.setPixmap(scaled_pixmap_drone)
+
     def closeEvent(self, event):
         self.ros_thread.stop()
         event.accept()
