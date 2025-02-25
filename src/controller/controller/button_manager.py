@@ -22,20 +22,17 @@ class ButtonManagerNode(Node):
     def __init__(self):
         super().__init__('button_manager')
 
-        self.is_armed = False
-
-        self.button1 = Button(topic='controller/but1', short_callback=self.arm_takeoff_callback)
-        # self.button2 = Button(topic='controller/but2', short_callback=self.takeoff)
-        self.button3 = Button(topic='controller/but3', short_callback=self.land_callback)
-        self.button4 = Button(topic='controller/but4', short_callback=self.set_guided_callback)
+        self.button1 = Button(topic='controller/but1', short_callback=self.set_guided_callback)
+        self.button2 = Button(topic='controller/but2', short_callback=self.arm_callback)
+        self.button3 = Button(topic='controller/but3', short_callback=self.takeoff_callback)
+        self.button4 = Button(topic='controller/but4', short_callback=self.land_callback)
 
         # RIGHT CONTROLLER BUTTONS
         self.but1_subscriber = self.create_subscription(Int32, 'controller/but1', self.button1.data_callback, 10)
-        # self.but2_subscriber = self.create_subscription(Int32, 'controller/but2', self.button2.data_callback, 10)
+        self.but2_subscriber = self.create_subscription(Int32, 'controller/but2', self.button2.data_callback, 10)
         self.but3_subscriber = self.create_subscription(Int32, 'controller/but3', self.button3.data_callback, 10)
         self.but4_subscriber = self.create_subscription(Int32, 'controller/but4', self.button4.data_callback, 10)
-        # MAVROS STATE SUBSCRIPTION
-        self.is_armed_subscriber = self.create_subscription(State, '/mavros/state', self.is_armed_callback, 10)
+        
 
     
         self.mavros_clients = {
@@ -63,6 +60,11 @@ class ButtonManagerNode(Node):
     def is_armed_callback(self, msg: State):
         self.is_armed = msg.armed
 
+    def arm_callback(self):
+        self.arm_drone()
+
+    def takeoff_callback(self):
+        self.takeoff()
 
     def _change_mode(self, mode: str):
         mode_upper = mode.upper()
