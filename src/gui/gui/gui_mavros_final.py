@@ -234,11 +234,17 @@ class RosThread_Cam(QThread):
         super().__init__()
         self.cam_node = CameraSubscriberNode()
         self.cam_node.signal = self.fwd_cam_received
+        self.executor = rclpy.executors.MultiThreadedExecutor()
+        self.executor.add_node(self.cam_node)
+        self.running = True
 
     def run(self):
-        rclpy.spin(self.cam_node)
+        while self.running and rclpy.ok():
+            self.executor.spin_once(timeout_sec=0.1)
 
     def stop(self):
+        self.running = False
+        self.executor.shutdown()
         rclpy.shutdown()
         self.wait()
 
@@ -249,11 +255,17 @@ class RosThread_Telem(QThread):
         super().__init__()
         self.telem_node = MavrosSubscriberNode()
         self.telem_node.signal = self.telem_received
+        self.executor = rclpy.executors.MultiThreadedExecutor()
+        self.executor.add_node(self.telem_node)
+        self.running = True
 
     def run(self):
-        rclpy.spin(self.telem_node)
+        while self.running and rclpy.ok():
+            self.executor.spin_once(timeout_sec=0.1)
 
     def stop(self):
+        self.running = False
+        self.executor.shutdown()
         rclpy.shutdown()
         self.wait()
 
@@ -264,11 +276,17 @@ class RosThread_Controller(QThread):
         super().__init__()
         self.controller_node = ControllerSubscriberNode()
         self.controller_node.signal = self.controller_received
+        self.executor = rclpy.executors.MultiThreadedExecutor()
+        self.executor.add_node(self.controller_node)
+        self.running = True
 
     def run(self):
-        rclpy.spin(self.controller_node)
+        while self.running and rclpy.ok():
+            self.executor.spin_once(timeout_sec=0.1)
 
     def stop(self):
+        self.running = False
+        self.executor.shutdown()
         rclpy.shutdown()
         self.wait()
 
