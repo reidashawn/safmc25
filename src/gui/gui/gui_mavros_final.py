@@ -244,9 +244,9 @@ class RosThread(QThread):
         self.controller_node.signal = self.controller_received
 
     def run(self):
-        rclpy.spin(self.cam_node)
-        rclpy.spin(self.telem_node)
         rclpy.spin(self.controller_node)
+        rclpy.spin(self.telem_node)
+        rclpy.spin(self.cam_node)
 
 
     def stop(self):
@@ -262,12 +262,12 @@ class MainWindow(QMainWindow):
 
         self.ros_thread = RosThread()
 
-        self.createCamera()
         self.createStatus()
         self.createOverview()
         self.createButtons()
         self.createMessages()
-
+        self.createCamera()
+        
         # General
         self.setStyleSheet("background-color: #353535;")
 
@@ -393,6 +393,8 @@ class MainWindow(QMainWindow):
             Qt.Key_P: Button(Qt.Key_P, "#F0F1F1", "#464646", self),
         }
 
+        self.ros_thread.controller_received.connect(self.updateController)
+
     def createMessages(self):
 
         self.label_messages = QLabel("    Messages", self)
@@ -413,9 +415,7 @@ class MainWindow(QMainWindow):
         for message in self.messages:
             self.message_layout.addWidget(message)
 
-        self.ros_thread.controller_received.connect(self.updateController)
-
-    def updateCam(self, cv_image):  # (SHAWN)
+    def updateCam(self, cv_image):
         height, width, channel = cv_image.shape
         bytes_per_line = channel * width
         q_image = QImage(cv_image.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
@@ -424,16 +424,16 @@ class MainWindow(QMainWindow):
 
     def updateStatus(self, data):
         for key, value in data.items():
-            if key != "error":
+            # if key != "error":
                 self.statuses[key].setText(f"{key.capitalize()}: {value}")
                 self.statuses[key].setStyleSheet("color: #F0F1F1;"
                                             "background-color: #242424;")
-            else:
-                while len(self.messages) >= messages_max :
-                    self.messages.pop(0)
-                for i in len(self.messages):
-                    j = len(self.messages) - 1 - i
-                    self.messages[j].setTest(self.messages[j], self)
+            # else:
+            #     while len(self.messages) >= messages_max :
+            #         self.messages.pop(0)
+            #     for i in len(self.messages):
+            #         j = len(self.messages) - 1 - i
+            #         self.messages[j].setTest(self.messages[j], self)
                     
     def updateController(self, data):
         self.updateButtons(data)
