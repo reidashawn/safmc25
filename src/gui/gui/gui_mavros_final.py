@@ -559,8 +559,8 @@ class MainWindow(QMainWindow):
             grid.addLayout(self.layout_status, 1, 0)
             grid.addLayout(message_container, 1, 1)
 
-            grid.setRowStretch(0, 3)
-            grid.setRowStretch(1, 1)
+            grid.setRowStretch(0, 5)
+            grid.setRowStretch(1, 2)
             grid.setColumnStretch(0, 22)
             grid.setColumnStretch(1, 10)
 
