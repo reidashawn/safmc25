@@ -49,7 +49,7 @@ class DroneMovement(Node):
 
     def hor_vel_callback(self, data):
         if self.axis_lock:
-            if data.linear.x > data.linear.y:
+            if abs(data.linear.x) > abs(data.linear.y):
                 self.linear_x = data.linear.x
                 self.linear_y = 0
             else:
