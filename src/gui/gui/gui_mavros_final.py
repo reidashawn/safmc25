@@ -313,7 +313,7 @@ class MainWindow(QMainWindow):
         self.pic_fwd_cam.setAlignment(Qt.AlignCenter)
         self.pic_fwd_cam.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.pixmap_cam = QPixmap("dwd_cam_fake.jpg")
-        self.ros_thread.fwd_cam_received.connect(self.updateCam)
+        self.ros_thread_cam.fwd_cam_received.connect(self.updateCam)
 
     def createStatus(self):
 
@@ -348,7 +348,7 @@ class MainWindow(QMainWindow):
                 row += 1
                 column = 0
 
-        self.ros_thread.telem_received.connect(self.updateStatus)
+        self.ros_thread_telem.telem_received.connect(self.updateStatus)
 
     def createOverview(self):
         self.label_overview = QLabel("    Overview", self)
@@ -418,7 +418,7 @@ class MainWindow(QMainWindow):
             Qt.Key_P: Button(Qt.Key_P, "#F0F1F1", "#464646", self),
         }
 
-        self.ros_thread.controller_received.connect(self.updateController)
+        self.ros_thread_controller.controller_received.connect(self.updateController)
 
     def createMessages(self):
 
@@ -614,7 +614,9 @@ class MainWindow(QMainWindow):
         self.updatePixmap()
 
     def closeEvent(self, event):
-        self.ros_thread.stop()
+        self.ros_thread_cam.stop()
+        self.ros_thread_telem.stop()
+        self.ros_thread_controller.stop()
         event.accept()
 
 def main():
