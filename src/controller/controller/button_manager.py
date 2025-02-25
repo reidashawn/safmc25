@@ -16,7 +16,9 @@ VALID_MODES = [
 ]
 
 TAKEOFF_HEIGHT = 1.0
-MAV_CMD_NAV_TAKEOFF = 22 # From Mavlink MAV_CMD: https://mavlink.io/en/messages/common.html#mav_commands
+MAV_CMD_NAV_TAKEOFF = 22 # From Mavlink MAV_CMD: https://mavlink.io/en/messages/common.html#mav_commands)
+
+
 
 class ButtonManagerNode(Node):
     def __init__(self):
