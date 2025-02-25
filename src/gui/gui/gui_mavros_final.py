@@ -532,7 +532,7 @@ class MainWindow(QMainWindow):
             message_container = QVBoxLayout()
             message_container.setSpacing(0)
             message_container.addWidget(self.label_messages)
-            message_container.addWidget(self.message_layout)
+            message_container.addLayout(self.message_layout)
             
             grid = QGridLayout()
             grid.setSpacing(5)
