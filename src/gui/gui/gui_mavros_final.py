@@ -45,25 +45,25 @@ window_colour = "#242424"
 
 messages_max = 6
 
-# class CameraSubscriberNode(Node):
-#     def __init__(self):
-#         super().__init__('camera_subscriber')
-#         self.bridge = CvBridge()
-#         self.subscription = self.create_subscription(
-#             CompressedImage, 
-#             "/camera/camera/color/image_raw/compressed",
-#             self.camera_sub_callback, 10
-#         )
-#         self.signal = pyqtSignal(object)
+class CameraSubscriberNode(Node):
+    def __init__(self):
+        super().__init__('camera_subscriber')
+        self.bridge = CvBridge()
+        self.subscription = self.create_subscription(
+            CompressedImage, 
+            "/camera/camera/color/image_raw/compressed",
+            self.camera_sub_callback, 10
+        )
+        self.signal = pyqtSignal(object)
 
-#     def camera_sub_callback(self, msg):
-#         try:
-#             cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
-#         except Exception as e:
-#             self.get_logger().error(f"Failed to convert image {e}")
-#             return
+    def camera_sub_callback(self, msg):
+        try:
+            cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
+        except Exception as e:
+            self.get_logger().error(f"Failed to convert image {e}")
+            return
 
-#         self.signal.emit(cv_image)
+        self.signal.emit(cv_image)
 
 class MavrosSubscriberNode(Node):
     def __init__(self):
@@ -228,14 +228,14 @@ class Button(QLabel):
         self.setStyleSheet(f"background-color: {color};")
 
 class RosThread(QThread):
-    # fwd_cam_received = pyqtSignal(object)
+    fwd_cam_received = pyqtSignal(object)
     telem_received = pyqtSignal(dict)
     controller_received = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
-        # self.cam_node = CameraSubscriberNode()
-        # self.cam_node.signal = self.fwd_cam_received
+        self.cam_node = CameraSubscriberNode()
+        self.cam_node.signal = self.fwd_cam_received
 
         self.telem_node = MavrosSubscriberNode()
         self.telem_node.signal = self.telem_received
@@ -244,7 +244,7 @@ class RosThread(QThread):
         self.controller_node.signal = self.controller_received
 
     def run(self):
-        # rclpy.spin(self.cam_node)
+        rclpy.spin(self.cam_node)
         rclpy.spin(self.telem_node)
         rclpy.spin(self.controller_node)
 
@@ -288,7 +288,7 @@ class MainWindow(QMainWindow):
         self.pic_fwd_cam.setAlignment(Qt.AlignCenter)
         self.pic_fwd_cam.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.pixmap_cam = QPixmap("dwd_cam_fake.jpg")
-        # self.ros_thread.fwd_cam_received.connect(self.updateCam)
+        self.ros_thread.fwd_cam_received.connect(self.updateCam)
 
     def createStatus(self):
 
