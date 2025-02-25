@@ -4,7 +4,7 @@ from std_msgs.msg import Int32
 from mavros_msgs.srv import CommandBool, SetMode, CommandLong
 from mavros_msgs.msg import State
 from geometry_msgs.msg import Twist, Vector3
-from helpers.button import Button
+from controller.helpers.button import Button
 from time import sleep
 from interfaces.srv import ToggleStepper, SetFloat
 
@@ -23,6 +23,17 @@ MAX_VELOCITY = 0.10
 
 
 class ButtonManagerNode(Node):
+    VALID_MODES = [
+        'GUIDED',
+        'LAND',
+        'STABILIZE',
+        'LOITER'
+    ]
+
+    TAKEOFF_HEIGHT = 1.0
+    MAV_CMD_NAV_TAKEOFF = 22 # From Mavlink MAV_CMD: https://mavlink.io/en/messages/common.html#mav_commands)
+    MAX_VELOCITY = 0.10
+
     def __init__(self):
         super().__init__('button_manager')
 
