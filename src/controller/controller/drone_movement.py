@@ -21,21 +21,30 @@ class DroneMovement(Node):
         # self.vert_vel_sub = self.create_subscription(Float32, '/left/cmd_vel_vert', self.vert_vel_callback, 10)
         self.vert_srv = self.create_service(SetFloat, '/vert_vel', self.vert_vel_srv_callback)
         self.lock_srv = self.create_service(SetBool, '/lock_axis', self.lock_axis_callback)
-        self.lock_srv = self.create_service(SetBool, '/landing', self.landing_callback)
+        self.lock_zero_srv = self.create_service(SetBool, '/lock_zero', self.lock_zero_callback)
+        self.land_srv = self.create_service(SetBool, '/landing', self.landing_callback)
         self.linear_x = 0
         self.linear_y = 0
         self.linear_z = 0
         self.angular_z = 0
+        self.zero_lock = False
         self.axis_lock = False
         self.drone_state = False
         self.drone_landing = False
 
     def publish_vel(self):
         msg = Twist()
-        msg.linear.x = float(self.linear_x)
-        msg.linear.y = float(self.linear_y)
-        msg.linear.z = float(self.linear_z)
-        msg.angular.z = float(self.angular_z)
+        if self.zero_lock:
+            msg.linear.x = 0.0
+            msg.linear.y = 0.0
+            msg.linear.z = 0.0
+            msg.angular.z = 0.0
+            self.get_logger().info("zero lock")
+        else:
+            msg.linear.x = float(self.linear_x)
+            msg.linear.y = float(self.linear_y)
+            msg.linear.z = float(self.linear_z)
+            msg.angular.z = float(self.angular_z)
         self.debug_pub.publish(msg)
         if not self.drone_state or self.drone_landing:
             self.get_logger().info("Drone not activated")
@@ -62,11 +71,11 @@ class DroneMovement(Node):
                 self.linear_x = data.linear.x
                 self.linear_y = 0
             else:
-                self.linear_y = data.linear.y
+                self.linear_y = -data.linear.y
                 self.linear_x = 0
             self.angular_z = 0
         else:
-            self.linear_y = data.linear.y
+            self.linear_y = -data.linear.y
             self.linear_x = data.linear.x
         self.publish_vel()
 
@@ -82,6 +91,11 @@ class DroneMovement(Node):
         self.linear_z = request.data
         response.success = True
         self.publish_vel()
+        return response
+    
+    def lock_zero_callback(self, request, response):
+        self.zero_lock = request.data
+        response.success = True
         return response
     
     def lock_axis_callback(self, request, response):

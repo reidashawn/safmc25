@@ -55,7 +55,7 @@ class ButtonManagerNode(Node):
         if self.hand == 'right':
             self.button1 = Button(topic='controller/right/but1', short_callback=self.guided_arm_takeoff)
             self.button2 = Button(topic='controller/right/but2', short_callback=self.land_callback)
-            self.button3 = Button(topic='controller/right/but3', short_callback=self.recenter)
+            self.button3 = Button(topic='controller/right/but3', short_callback=self.recenter, long_callback=self.lock_zero, release_callback=self.unlock_zero)
             self.button4 = Button(topic='controller/right/but4', short_callback=self.lock_axis, release_callback=self.unlock_axis)
             
             self.get_logger().info('Right hand initialized')
@@ -92,12 +92,13 @@ class ButtonManagerNode(Node):
             'bag': self.create_client(ToggleStepper, '/rotate_stepper'),
             'move_vert': self.create_client(SetFloat, '/vert_vel'),
             'lock_axis': self.create_client(SetBool, '/lock_axis'),
+            'lock_zero': self.create_client(SetBool, '/lock_zero'),
             'landing': self.create_client(SetBool, '/landing')
         }
 
-        for service_name, client in self.mavros_clients.items():
-            while not client.wait_for_service(timeout_sec=1.0):
-                self.get_logger().warn(f'Waiting for {service_name} service')
+        # for service_name, client in self.mavros_clients.items():
+        #     while not client.wait_for_service(timeout_sec=1.0):
+        #         self.get_logger().warn(f'Waiting for {service_name} service')
 
         self.get_logger().info('All services online')
 
@@ -246,6 +247,18 @@ class ButtonManagerNode(Node):
         request = SetBool.Request()
         request.data = False
         self.mavros_clients['lock_axis'].call_async(request)
+
+    def lock_zero(self):
+        request = SetBool.Request()
+        request.data = True
+        self.get_logger().info(f"Lock zero")
+        self.mavros_clients['lock_zero'].call_async(request)
+    
+    def unlock_zero(self):
+        request = SetBool.Request()
+        request.data = False
+        self.get_logger().info(f"Unlock zero")
+        self.mavros_clients['lock_zero'].call_async(request)
 
     
 
