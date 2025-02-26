@@ -69,8 +69,8 @@ class ButtonManagerNode(Node):
         else:
             self.button1 = Button(topic='controller/left/but1', press_callback=self.vertical_up_movement_callback,release_callback=self.vertical_zero_movement_callback)
             self.button2 = Button(topic='controller/left/but2', press_callback=self.vertical_down_movement_callback, release_callback=self.vertical_zero_movement_callback)
-            self.button3 = Button(topic='controller/left/but3', short_callback=self.bag_in_callback)
-            self.button4 = Button(topic='controller/left/but4', short_callback=self.bag_out_callback)
+            self.button3 = Button(topic='controller/left/but3', short_callback=self.bag_in_callback, long_callback=self.bag_in_hold_callback, release_callback=self.bag_stop_callback)
+            self.button4 = Button(topic='controller/left/but4', short_callback=self.bag_out_callback, long_callback=self.bag_out_hold_callback, release_callback=self.bag_stop_callback)
 
             # LEFT CONTROLLER BUTTONS
             self.but1_subscriber = self.create_subscription(Int32, 'controller/left/but1', self.button1.data_callback, 10)
@@ -90,6 +90,7 @@ class ButtonManagerNode(Node):
             'arm': self.create_client(CommandBool, '/mavros/cmd/arming'),
             'takeoff': self.create_client(CommandLong, '/mavros/cmd/command'),
             'bag': self.create_client(ToggleStepper, '/rotate_stepper'),
+            'bag_hold': self.create_client(ToggleStepper, '/toggle_stepper'),
             'move_vert': self.create_client(SetFloat, '/vert_vel'),
             'lock_axis': self.create_client(SetBool, '/lock_axis'),
             'lock_zero': self.create_client(SetBool, '/lock_zero'),
@@ -179,6 +180,17 @@ class ButtonManagerNode(Node):
         except Exception as e:
             self.get_logger().error('bag_in: Exception {e} occured')
 
+    def bag_in_hold_callback(self):
+        bag_in_req = ToggleStepper.Request()
+        bag_in_req.stepper_id = 1
+        bag_in_req.speed = float(1)
+        self.get_logger().info("sending bag in")
+        future = self.mavros_clients['bag_hold'].call_async(bag_in_req)
+        try:
+            self.get_logger().info(f"bag result: {future.result()}")
+        except Exception as e:
+            self.get_logger().error('bag: Exception {e} occured')
+
     def bag_out_callback(self):
         bag_out_req = ToggleStepper.Request()
         bag_out_req.stepper_id = 1
@@ -188,6 +200,26 @@ class ButtonManagerNode(Node):
             self.get_logger().info(f"bag_in result: {future.result()}")
         except Exception as e:
             self.get_logger().error('bag_in: Exception {e} occured')
+    
+    def bag_out_hold_callback(self):
+        bag_out_req = ToggleStepper.Request()
+        bag_out_req.stepper_id = 1
+        bag_out_req.speed = float(-1)
+        future = self.mavros_clients['bag_hold'].call_async(bag_out_req)
+        try:
+            self.get_logger().info(f"bag result: {future.result()}")
+        except Exception as e:
+            self.get_logger().error('bag: Exception {e} occured')
+
+    def bag_stop_callback(self):
+        bag_out_req = ToggleStepper.Request()
+        bag_out_req.stepper_id = 1
+        bag_out_req.speed = float(0)
+        future = self.mavros_clients['bag_hold'].call_async(bag_out_req)
+        try:
+            self.get_logger().info(f"bag result: {future.result()}")
+        except Exception as e:
+            self.get_logger().error('bag: Exception {e} occured')        
 
     def _change_mode(self, mode: str):
         mode_upper = mode.upper()

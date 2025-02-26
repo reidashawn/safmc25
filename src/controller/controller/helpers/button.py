@@ -21,12 +21,15 @@ class Button:
             if self.last_state == 0:
                 self.last_state = 1
                 self.last_time = time.time()
-                if self.short_callback is not None:
+                if self.short_callback is not None and self.long_callback is None:
                     self.short_callback()
             elif (time.time() - self.last_time) > self.long_press_time and self.long_callback is not None:
                 self.long_callback()
         else:
-            if self.last_state == 1 and self.release_callback:
-                self.release_callback()
+            if self.last_state == 1:
+                if self.release_callback is not None:
+                    self.release_callback()
+                elif self.short_callback is not None and self.long_callback is not None and (time.time() - self.last_time) > self.long_press_time:
+                    self.short_callback()
             self.last_state = 0
 
