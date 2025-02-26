@@ -2,7 +2,7 @@ from std_msgs.msg import Int32
 import time
 
 class Button:
-    def __init__(self, topic, long_press_time=2, press_callback=None, release_callback=None, short_callback=None, long_callback=None):
+    def __init__(self, topic, long_press_time=1, press_callback=None, release_callback=None, short_callback=None, long_callback=None):
         self.topic = topic
         # self.node = node
         # self.sub = self.node.create_subscription(Int32, topic, self.data_callback, 10)
@@ -27,9 +27,9 @@ class Button:
                 self.long_callback()
         else:
             if self.last_state == 1:
-                if self.release_callback is not None:
-                    self.release_callback()
-                elif self.short_callback is not None and self.long_callback is not None and (time.time() - self.last_time) > self.long_press_time:
+                if self.short_callback is not None and self.long_callback is not None and (time.time() - self.last_time) < self.long_press_time:
                     self.short_callback()
+                elif self.release_callback is not None:
+                    self.release_callback()
             self.last_state = 0
 
