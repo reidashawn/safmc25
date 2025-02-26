@@ -98,15 +98,19 @@ class MavControl(Node):
 
     def horizontal_movement(self, key: str):
         #TODO: AXES ARE SWAPPER. D GOES BACKWARDS, A GOES FORWARD
+        # FORWARD = A 
+        # BACKWARD = D
+        # RIGHT = W
+        # LEFT = S
         directions = {
-            # forward
-            "w": Twist(linear=Vector3(x=HORIZONTAL_VELOCITY, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
-            # backward
-            "s": Twist(linear=Vector3(x=-HORIZONTAL_VELOCITY, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
-            # left
-            "a": Twist(linear=Vector3(x=0.0, y=-HORIZONTAL_VELOCITY, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
-            # right
-            "d": Twist(linear=Vector3(x=0.0, y=HORIZONTAL_VELOCITY, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0))
+            # forward -> LEFT
+            "a": Twist(linear=Vector3(x=HORIZONTAL_VELOCITY, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
+            # backward -> RIFHT
+            "d": Twist(linear=Vector3(x=-HORIZONTAL_VELOCITY, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
+            # left -> BACKWD
+            "s": Twist(linear=Vector3(x=0.0, y=-HORIZONTAL_VELOCITY, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)),
+            # right -> FWD
+            "w": Twist(linear=Vector3(x=0.0, y=HORIZONTAL_VELOCITY, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0))
         }
         if key in directions:
             self.cmd_vel_publisher.publish(directions[key])
