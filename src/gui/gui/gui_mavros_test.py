@@ -13,13 +13,26 @@ from cv_bridge import CvBridge  # For converting ROS2 Image messages to OpenCV f
 import cv2  # For OpenCV image processing
 from sensor_msgs.msg import CompressedImage
 
-from mavros_msgs.msg import State
-from sensor_msgs.msg import Imu, BatteryState
+from mavros_msgs.msg import State, OpticalFlow, StatusText
+from sensor_msgs.msg import Imu, BatteryState, Range
 from std_msgs.msg import Float64
 # import tf_transformations
 # from controller.madgwick_py import quarternion
 
 import transforms3d
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+
+qos_reliable = QoSProfile(
+    reliability=ReliabilityPolicy.RELIABLE,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=10
+)
+
+qos_best_effort = QoSProfile(
+    reliability=ReliabilityPolicy.BEST_EFFORT,
+    history=HistoryPolicy.KEEP_LAST,
+    depth=10
+)
 
 # Dimensions
 margin = 10
@@ -32,33 +45,36 @@ text_colour = "#F0F1F1"
 background_colour = "#353535"
 window_colour = "#242424"
 
-# class CameraSubscriberNode(Node):
-#     def __init__(self):
-#         super().__init__('camera_subscriber')
-#         self.bridge = CvBridge()
-#         self.subscription = self.create_subscription(
-#             CompressedImage, 
-#             "/camera/camera/color/image_raw/compressed",
-#             self.camera_sub_callback, 10
-#         )
-#         self.signal = pyqtSignal(object)
+class CameraSubscriberNode(Node):
+    def __init__(self):
+        super().__init__('camera_subscriber')
+        self.bridge = CvBridge()
+        self.subscription = self.create_subscription(
+            CompressedImage, 
+            "/camera/camera/color/image_raw/compressed",
+            self.camera_sub_callback, 10
+        )
+        self.signal = pyqtSignal(object)
 
-#     def camera_sub_callback(self, msg):
-#         try:
-#             cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
-#         except Exception as e:
-#             self.get_logger().error(f"Failed to convert image {e}")
-#             return
+    def camera_sub_callback(self, msg):
+        try:
+            cv_image = self.bridge.compressed_imgmsg_to_cv2(msg, desired_encoding="bgr8")
+        except Exception as e:
+            self.get_logger().error(f"Failed to convert image {e}")
+            return
 
-#         self.signal.emit(cv_image)
+        self.signal.emit(cv_image)
 
 class MavrosSubscriberNode(Node):
     def __init__(self):
         super().__init__('mavros_subscriber')
-        self.create_subscription(State, '/mavros/state', self.state_callback, 10)
-        self.create_subscription(BatteryState, '/mavros/battery', self.battery_callback, 10)
-        self.create_subscription(Imu, '/mavros/imu/data', self.imu_callback, 10)
-        self.create_subscription(Float64, '/mavros/global_position/rel_alt', self.altitude_callback, 10)
+        self.create_subscription(State, '/mavros/state', self.state_callback, qos_reliable)
+        self.create_subscription(BatteryState, '/mavros/battery', self.battery_callback, qos_best_effort)
+        self.create_subscription(Imu, '/mavros/imu/data', self.imu_callback, qos_best_effort)
+        self.create_subscription(Float64, '/mavros/global_position/rel_alt', self.altitude_callback, qos_best_effort)
+        self.create_subscription(Range, '/mavros/rangefinder/rangefinder', self.rangefinder_callback, qos_reliable)
+        self.create_subscription(OpticalFlow, '/mavros/optical_flow/raw/optical_flow', self.optflow_callback, qos_reliable)
+        self.create_subscription(StatusText, '/mavros/statustext/recv', self.error_callback, qos_best_effort)
         
         self.data = {
             "armed": "Unknown",
@@ -67,7 +83,10 @@ class MavrosSubscriberNode(Node):
             "roll": "Unknown",
             "pitch": "Unknown",
             "yaw": "Unknown",
-            "altitude": "Unknown"
+            "altitude": "Unknown",
+            "rangefinder": "Unknown",
+            "optflow": "Unknown",
+            "error": "Unknown"
         }
         self.signal = pyqtSignal(dict)
     
@@ -87,24 +106,37 @@ class MavrosSubscriberNode(Node):
             msg.orientation.z,
             msg.orientation.w
         ]
-        roll, pitch, yaw = transforms3d.euler.euler2quat(quaternion)
+        roll, pitch, yaw = transforms3d.euler.quat2euler(quaternion)
         self.data["roll"] = f"{roll:.2f}"
         self.data["pitch"] = f"{pitch:.2f}"
-        self.data["yaw"] = f"{yaw:.2f}"
+        self.data["yaw"] = f"{yaw*100:.2f}"
         self.signal.emit(self.data)
 
     def altitude_callback(self, msg):
         self.data["altitude"] = f"{msg.data:.2f} m"
         self.signal.emit(self.data)
+    
+    def rangefinder_callback(self, msg):
+        self.data["rangefinder"] = f"{msg.range:.2f} m"
+        self.signal.emit(self.data)
+    
+    def optflow_callback(self, msg):
+        self.data["optflow"] = f"Qual:{msg.quality:.2f}, Opt_x:{msg.flow_rate.x:.2f}, Opt_y:{msg.flow_rate.y:.2f}, "
+        self.signal.emit(self.data)
+
+    def error_callback(self, msg):
+        print(msg)
+        self.data["error"] = msg.text
+        self.signal.emit(self.data)
 
 class RosThread(QThread):
-    # fwd_cam_received = pyqtSignal(object)
+    fwd_cam_received = pyqtSignal(object)
     telem_received = pyqtSignal(dict)
 
     def __init__(self):
         super().__init__()
-        # self.cam_node = CameraSubscriberNode()
-        # self.cam_node.signal = self.fwd_cam_received
+        self.cam_node = CameraSubscriberNode()
+        self.cam_node.signal = self.fwd_cam_received
 
         self.telem_node = MavrosSubscriberNode()
         self.telem_node.signal = self.telem_received
@@ -122,12 +154,13 @@ class MainWindow(QMainWindow):
 
         super().__init__()
         self.setWindowTitle("SAFMC GUI")
+        self.setGeometry(QApplication.primaryScreen().geometry())
 
         self.ros_thread = RosThread()
 
         # Forward cam (SHAWN)
         self.label_fwd_cam, self.pic_fwd_cam = self.createCam("    Forward Cam")
-        # self.ros_thread.fwd_cam_received.connect(self.updateCam)
+        self.ros_thread.fwd_cam_received.connect(self.updateCam)
         self.updateCam_fake(self.pic_fwd_cam)
 
         # Downward cam
@@ -152,7 +185,6 @@ class MainWindow(QMainWindow):
         self.pic_drone.setPixmap(pixmap_drone.scaled(self.pic_drone.size(), aspectRatioMode=1))
         self.pic_drone.setFixedSize(info_height // 6 * 10, info_height)
         self.pic_drone.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-
 
         # Controllers
         self.label_ctrl = QLabel("    Controllers", self)
@@ -210,15 +242,6 @@ class MainWindow(QMainWindow):
                                      "background-color: #242424;")
         label_UAV.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
 
-        # info_UAV = QLabel("    Armed : ARMED\n    Battery : 96%\n    Flight Mode : GUIDED\n\n    Pitch : 0.6\n    Roll : -0.3\n    Yaw : 359\n    Altitude : 1.6m\n", self)
-        # info_UAV.setGeometry(margin, 2 * margin + 2 * label_height + camera_height, info_width, info_height)
-        # info_UAV.setFont(QFont("Arial", 10))
-        # info_UAV.setFixedSize(info_width, info_height)
-        # info_UAV.setStyleSheet("color: #F0F1F1;"
-        #                        "background-color: #242424;")
-        # info_UAV.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-
-
         self.info_UAV = QVBoxLayout()
         self.labels = {
             "armed": QLabel("Armed: Unknown"),
@@ -227,7 +250,10 @@ class MainWindow(QMainWindow):
             "roll": QLabel("Roll: Unknown"),
             "pitch": QLabel("Pitch: Unknown"),
             "yaw": QLabel("Yaw: Unknown"),
-            "altitude": QLabel("Altitude: Unknown")
+            "altitude": QLabel("Altitude: Unknown"),
+            "rangefinder": QLabel("Rangefinder: Unknown"),
+            "optflow": QLabel("Optflow: Unknown"),
+            "error": QLabel("Error: Unknown")
         }
         for label in self.labels.values():
             self.info_UAV.addWidget(label)
@@ -248,6 +274,8 @@ class MainWindow(QMainWindow):
     def updateUAVInfo(self, data):
         for key, value in data.items():
             self.labels[key].setText(f"{key.capitalize()}: {value}")
+            self.labels[key].setStyleSheet("color: #F0F1F1;"
+                                           "background-color: #242424;")
 
     def initUI(self):
         central_widget = QWidget()

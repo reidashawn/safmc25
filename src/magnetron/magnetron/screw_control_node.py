@@ -62,7 +62,6 @@ class StepperClient(Node):
         request = ToggleStepper.Request()
         request.stepper_id = stepper
         request.speed = float(self.stepper_speed[stepper])
-
         future = self.client.call_async(request)
         future.add_done_callback(self.response_callback)
 

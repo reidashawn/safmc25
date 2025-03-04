@@ -113,7 +113,7 @@ class StepperController(Node):
         self.speed_srv = self.create_service(ToggleStepper, 'toggle_stepper', self.handle_toggle_stepper)
         self.rotation_srv = self.create_service(ToggleStepper, 'rotate_stepper', self.handle_rotate_stepper)
         self.stepper_pins = {1: [17, 27, 22, 23], 2: [24, 25, 16, 26]}
-        self.delay = .001
+        self.delay = .00075
         self.steppers ={stepper: Stepper(self.stepper_pins[stepper], self.delay) for stepper in self.stepper_pins}
         self.get_logger().info("StepperController node is ready.")
 
