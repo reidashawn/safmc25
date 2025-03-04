@@ -196,8 +196,7 @@ class ImuConverter(Node):
         velocity_linear = Vector3(x=forward_vel, y=side_vel, z=0.0)
         velocity_angular = Vector3()
         velocity_msg = Twist(linear=velocity_linear, angular=velocity_angular)
-        self.get_logger().info(f"forward_vel type: {type(forward_vel)}")
-        self.get_logger().info(f"side_vel type: {type(side_vel)}")
+
         # Publish velocity command
         self.velocity_publisher.publish(velocity_msg)
 

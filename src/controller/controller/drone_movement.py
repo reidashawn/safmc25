@@ -47,7 +47,7 @@ class DroneMovement(Node):
             msg.angular.z = float(self.angular_z)
         self.debug_pub.publish(msg)
         if not self.drone_state or self.drone_landing:
-            self.get_logger().info("Drone not activated")
+            # self.get_logger().info("Drone not activated")
             return
         
         self.pub.publish(msg)
@@ -59,7 +59,7 @@ class DroneMovement(Node):
         else:
             self.drone_state = True
     
-    def landing_callback(self, request):
+    def landing_callback(self, request, response):
         self.drone_landing = request.data
         response = SetBool.Response()
         response.success = True
