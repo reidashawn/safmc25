@@ -179,6 +179,9 @@ class ImuConverter(Node):
 
         # Publish Euler angles
         euler_msg = Float32MultiArray()
+        if self.hand == 'left':
+            pitch = -pitch
+            roll = -roll
         euler_msg.data = [pitch, roll, yaw]
         self.euler_publisher.publish(euler_msg)
 
