@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from interfaces.srv import TogglePin 
 import pigpio
+import time
 
 class Pin:
     """
@@ -34,6 +35,7 @@ class Pin:
         self.angle = angle
         pulse = self.angle_to_duty(angle)
         self.pi.set_servo_pulsewidth(self.pin, pulse)
+        print(f'setting {self.pin} to {pulse}')
         time.sleep(0.1)
     
     def stop_pwm(self):
@@ -70,7 +72,7 @@ class PinController(Node):
         if pin in self.pins:
             self.pins[pin].set_angle(angle)  # Update existing pin instance
         else:
-            self.pins[pin] = Pin(self.pi, pin, default_angle=0, angle=angle)  # Create new pin instance
+            self.pins[pin] = Pin(self.pi, pin, default_angle=10, angle=angle)  # Create new pin instance
         
         response.success = True
         return response
