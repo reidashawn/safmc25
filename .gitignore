@@ -6,3 +6,4 @@ log/
 
 # Colcon metadata
 .colcon/
+**/.vscode/
