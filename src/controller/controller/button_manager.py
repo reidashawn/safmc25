@@ -297,7 +297,7 @@ class ButtonManagerNode(Node):
     
     def pot_callback(self, data):
         angle = 0
-        value = data.data - 
+        value = data.data
         if data.data > 35:
             angle = 180
         elif data.data > 30:
