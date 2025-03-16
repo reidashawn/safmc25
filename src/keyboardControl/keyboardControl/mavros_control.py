@@ -11,7 +11,7 @@ import tty
 from pynput import keyboard
 
 
-HORIZONTAL_VELOCITY = 0.05
+HORIZONTAL_VELOCITY = 0.1
 TAKEOFF_HEIGHT = 1.0
 
 
@@ -123,6 +123,10 @@ class MavControl(Node):
             self.cmd_vel_publisher.publish(Twist(linear=Vector3(x=0.0, y=0.0, z=HORIZONTAL_VELOCITY), angular=Vector3(x=0.0, y=0.0, z=0.0)))
         self.get_logger().info(f"{key} vertical command issued")
         
+    def stop_horizontal_movement(self):
+        self.get_logger().info('braking')
+        brake = Twist(linear=Vector3(x=0.0, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0))
+        self.cmd_vel_publisher.publish(brake)
 
     def on_press(self, key):
         try:
@@ -149,6 +153,8 @@ class MavControl(Node):
         elif key == keyboard.Key.esc:  # Stop listener on ESC
             self.get_logger().info("Shutting down keyboard listener...")
             return False
+        elif key_char == "b":
+            self.stop_horizontal_movement()
 
     def start_keyboard_listener(self):
         with keyboard.Listener(on_press=self.on_press) as listener:
