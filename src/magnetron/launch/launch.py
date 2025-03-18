@@ -20,9 +20,9 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # Start pigpiod with sudo
-        ExecuteProcess(
-            cmd=["sudo", "pigpiod"],
-            output="screen"
-        )
+        # # Start pigpiod with sudo
+        # ExecuteProcess(
+        #     cmd=["sudo", "pigpiod"],
+        #     output="screen"
+        # )
     ])
