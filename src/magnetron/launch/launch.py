@@ -18,8 +18,9 @@ def generate_launch_description():
             executable='servo_node',
             name='servo_node',
             output='screen'
-        )
+        ),
 
+        # Start pigpiod with sudo
         ExecuteProcess(
             cmd=["sudo", "pigpiod"],
             output="screen"
