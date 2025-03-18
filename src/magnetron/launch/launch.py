@@ -1,5 +1,6 @@
 import launch
 import launch_ros.actions
+from launch.actions import ExecuteProcess
 
 def generate_launch_description():
     return launch.LaunchDescription([
@@ -17,5 +18,10 @@ def generate_launch_description():
             executable='servo_node',
             name='servo_node',
             output='screen'
+        )
+
+        ExecuteProcess(
+            cmd=["sudo", "pigpiod"],
+            output="screen"
         )
     ])
